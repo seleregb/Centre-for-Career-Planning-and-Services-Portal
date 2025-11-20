@@ -1,7 +1,7 @@
 # Production Environment Variables
 
 environment = "prod"
-location    = "canadacentral"
+location    = "eastus"
 
 resource_group_name = "rg-ccps-portal-prod"
 app_name            = "ccps-portal"

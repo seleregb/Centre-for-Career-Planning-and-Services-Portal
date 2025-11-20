@@ -1,7 +1,7 @@
 # Development Environment Variables
 
 environment = "dev"
-location    = "canadacentral"
+location    = "eastus"
 
 resource_group_name = "rg-ccps-portal-dev"
 app_name            = "ccps-portal"
