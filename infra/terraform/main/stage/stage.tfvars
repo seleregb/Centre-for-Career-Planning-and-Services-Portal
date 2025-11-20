@@ -1,7 +1,7 @@
 # Staging Environment Variables
 
 environment = "stage"
-location    = "eastus"
+location    = "canadacentral"
 
 resource_group_name = "rg-ccps-portal-stage"
 app_name            = "ccps-portal"
