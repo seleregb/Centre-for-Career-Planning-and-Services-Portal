@@ -40,41 +40,23 @@ stages:
             inputs:
               terraformVersion: $(terraformVersion)
 
-          - script: |
-              cd infra/terraform/main
-              echo "Validating Terraform configuration for $(environment) environment"
-              
-              # Check Terraform formatting
-              echo "Checking Terraform formatting..."
-              terraform fmt -check -recursive
-              if [ $? -ne 0 ]; then
-                echo "##vso[task.logissue type=error]Terraform files are not properly formatted. Run 'terraform fmt' to fix."
-                exit 1
-              fi
-              
-              # Initialize Terraform (without backend for validation)
-              echo "Initializing Terraform..."
-              terraform init -backend=false
-              
-              # Get the relative path to tfvars file (remove infra/terraform/main/ prefix)
-              TFVARS_RELATIVE=$(echo "$(tfvarsFile)" | sed 's|infra/terraform/main/||')
-              
-              # Validate Terraform configuration
-              echo "Validating Terraform configuration with $TFVARS_RELATIVE..."
-              terraform validate -var-file="$TFVARS_RELATIVE"
-              
-              if [ $? -ne 0 ]; then
-                echo "##vso[task.logissue type=error]Terraform validation failed for $(environment) environment"
-                exit 1
-              fi
-              
-              echo "Terraform validation passed for $(environment) environment"
-            displayName: 'Validate $(environment) Environment'
-            env:
-              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
-              ARM_TENANT_ID: $(ARM_TENANT_ID)
+          - task: TerraformCLI@2
+            inputs:
+              command: 'init'
+              commandOptions: '-backend=false'
+              backendType: 'azurerm'
+              backendServiceArm: 'tfARM'
+              workingDirectory: infra/terraform/main
+              allowTelemetryCollection: true
+
+          - task: TerraformCLI@2
+            inputs:
+              command: 'validate'
+              commandOptions: '-var-file=$(environment)/$(environment).tfvars'
+              backendType: 'azurerm'
+              backendServiceArm: 'tfARM'
+              workingDirectory: infra/terraform/main
+              allowTelemetryCollection: true
 
       - job: PublishArtifacts
         displayName: 'Publish Infrastructure Artifacts'
