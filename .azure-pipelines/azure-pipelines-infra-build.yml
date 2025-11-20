@@ -43,7 +43,7 @@ stages:
           - task: TerraformCLI@2
             inputs:
               command: 'init'
-              commandOptions: '-backend=false'
+              commandOptions: '--upgrade backend-config=$(environment)/$(environment).conf'
               backendType: 'azurerm'
               backendServiceArm: 'tfARM'
               workingDirectory: infra/terraform/main
@@ -52,7 +52,6 @@ stages:
           - task: TerraformCLI@2
             inputs:
               command: 'validate'
-              commandOptions: '-var-file=$(environment)/$(environment).tfvars'
               backendType: 'azurerm'
               backendServiceArm: 'tfARM'
               workingDirectory: infra/terraform/main
