@@ -57,15 +57,6 @@ stages:
               workingDirectory: infra/terraform/main
               allowTelemetryCollection: true
 
-          - task: TerraformCLI@2
-            inputs:
-              command: 'plan'
-              commandOptions: '-var-file=$(environment)/$(environment).tfvars'
-              backendType: 'azurerm'
-              backendServiceArm: 'tfARM'
-              workingDirectory: infra/terraform/main
-              allowTelemetryCollection: true
-
       - job: PublishArtifacts
         displayName: 'Publish Infrastructure Artifacts'
         dependsOn: ValidateTerraform
