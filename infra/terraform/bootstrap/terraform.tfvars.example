@@ -1,0 +1,23 @@
+# Example Terraform variables for bootstrap configuration
+# Copy this file to terraform.tfvars and fill in your values
+
+service_principal_name = "sp-terraform-ccps-prod"
+
+environment = "prod"
+
+terraform_state_storage_account_name = "stterraformstate"
+
+terraform_state_resource_group_name = "rg-terraform-state"
+
+# Assign User Access Administrator role (needed for Key Vault access policies)
+assign_user_access_admin = true
+
+# Password rotation (0 = disabled, set to days for auto-rotation)
+password_rotation_days = 0
+
+# Optional: Specify resource groups for scope-limited deployments
+# resource_group_scopes = {
+#   rg1 = "rg-ccps-portal-dev"
+#   rg2 = "rg-ccps-portal-stage"
+# }
+

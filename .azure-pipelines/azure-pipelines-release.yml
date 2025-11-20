@@ -1,0 +1,64 @@
+trigger: none
+
+stages:
+  - stage: Deploy_Dev
+    displayName: Deploy to Dev
+    jobs:
+      - deployment: TerraformApplyDev
+        environment: dev
+        pool:
+          vmImage: ubuntu-latest
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: UsePythonVersion@0
+                  inputs:
+                    versionSpec: '3.x'
+                - task: TerraformInstaller@0
+                  inputs:
+                    terraformVersion: '1.5.0'
+                - script: |
+                    terraform init -backend-config=backend/dev.backend.tf
+                    terraform plan -var-file=env/dev.tfvars -out=plan.tfplan
+                  displayName: 'Terraform init & plan'
+                - script: |
+                    terraform apply -auto-approve plan.tfplan
+                  displayName: 'Terraform apply'
+  - stage: Deploy_Stage
+    displayName: Deploy to Stage
+    jobs:
+      - deployment: TerraformApplyStage
+        environment: stage
+        pool:
+          vmImage: ubuntu-latest
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - script: |
+                    terraform init -backend-config=backend/stage.backend.tf
+                    terraform plan -var-file=env/stage.tfvars -out=plan.tfplan
+                  displayName: 'Terraform init & plan (stage)'
+                - script: |
+                    terraform apply -auto-approve plan.tfplan
+                  displayName: 'Terraform apply (stage)'
+  - stage: Deploy_Prod
+    displayName: Deploy to Prod
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: TerraformApplyProd
+        environment: prod
+        pool:
+          vmImage: ubuntu-latest
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - script: |
+                    terraform init -backend-config=backend/prod.backend.tf
+                    terraform plan -var-file=env/prod.tfvars -out=plan.tfplan
+                  displayName: 'Terraform init & plan (prod)'
+                - script: |
+                    terraform apply -auto-approve plan.tfplan
+                  displayName: 'Terraform apply (prod)'

@@ -1,0 +1,92 @@
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+
+variables:
+  terraformVersion: '1.14.0'
+
+stages:
+  - stage: ValidateInfrastructure
+    displayName: 'Validate Terraform Configuration'
+    jobs:
+      - job: ValidateTerraform
+        displayName: 'Validate Terraform per Environment'
+        pool:
+          vmImage: ubuntu-latest
+        strategy:
+          matrix:
+            Dev:
+              environment: dev
+              tfvarsFile: 'infra/terraform/main/dev/dev.tfvars'
+              backendConfig: 'infra/terraform/main/dev/dev.conf'
+            Stage:
+              environment: stage
+              tfvarsFile: 'infra/terraform/main/stage/stage.tfvars'
+              backendConfig: 'infra/terraform/main/stage/stage.conf'
+            Prod:
+              environment: prod
+              tfvarsFile: 'infra/terraform/main/prod/prod.tfvars'
+              backendConfig: 'infra/terraform/main/prod/prod.conf'
+        steps:
+          - task: Checkout@1
+            displayName: 'Checkout code'
+
+          - task: TerraformInstaller@0
+            displayName: 'Install Terraform $(terraformVersion)'
+            inputs:
+              terraformVersion: $(terraformVersion)
+
+          - script: |
+              cd infra/terraform/main
+              echo "Validating Terraform configuration for $(environment) environment"
+              
+              # Check Terraform formatting
+              echo "Checking Terraform formatting..."
+              terraform fmt -check -recursive
+              if [ $? -ne 0 ]; then
+                echo "##vso[task.logissue type=error]Terraform files are not properly formatted. Run 'terraform fmt' to fix."
+                exit 1
+              fi
+              
+              # Initialize Terraform (without backend for validation)
+              echo "Initializing Terraform..."
+              terraform init -backend=false
+              
+              # Get the relative path to tfvars file (remove infra/terraform/main/ prefix)
+              TFVARS_RELATIVE=$(echo "$(tfvarsFile)" | sed 's|infra/terraform/main/||')
+              
+              # Validate Terraform configuration
+              echo "Validating Terraform configuration with $TFVARS_RELATIVE..."
+              terraform validate -var-file="$TFVARS_RELATIVE"
+              
+              if [ $? -ne 0 ]; then
+                echo "##vso[task.logissue type=error]Terraform validation failed for $(environment) environment"
+                exit 1
+              fi
+              
+              echo "Terraform validation passed for $(environment) environment"
+            displayName: 'Validate $(environment) Environment'
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+      - job: PublishArtifacts
+        displayName: 'Publish Infrastructure Artifacts'
+        dependsOn: ValidateTerraform
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - task: Checkout@1
+            displayName: 'Checkout code'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Infrastructure Directory'
+            inputs:
+              PathtoPublish: '$(System.DefaultWorkingDirectory)/infra'
+              ArtifactName: 'infra'
+              publishLocation: 'Container'
+
