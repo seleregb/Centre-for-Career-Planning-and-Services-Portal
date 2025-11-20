@@ -131,7 +131,7 @@ resource "azurerm_linux_web_app" "backend" {
     
     # Container configuration
     application_stack {
-      docker_image_name = "${var.app_name}/backend"
+      docker_image_name = "${var.app_name}/backend:latest"
       docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
     }
     
@@ -214,8 +214,8 @@ resource "azurerm_linux_web_app" "frontend" {
     
     # Container configuration
     application_stack {
-      docker_image     = "${azurerm_container_registry.main.login_server}/frontend:latest"
-      docker_image_tag = "latest"
+      docker_image_name = "${var.app_name}/frontend:latest"
+      docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
     }
     
     # Security settings
@@ -327,4 +327,3 @@ resource "null_resource" "update_frontend_api_url" {
     EOT
   }
 }
-
