@@ -3,6 +3,10 @@ trigger:
     include:
       - main
       - develop
+  paths:
+    include:
+      - 'infra/terraform/**'
+      - '.azure-pipelines/azure-pipelines-infra-build.yml'
 
 variables:
   terraformVersion: '1.14.0'
@@ -30,8 +34,6 @@ stages:
               tfvarsFile: 'infra/terraform/main/prod/prod.tfvars'
               backendConfig: 'infra/terraform/main/prod/prod.conf'
         steps:
-          - task: Checkout@1
-            displayName: 'Checkout code'
 
           - task: TerraformInstaller@0
             displayName: 'Install Terraform $(terraformVersion)'
@@ -80,8 +82,6 @@ stages:
         pool:
           vmImage: ubuntu-latest
         steps:
-          - task: Checkout@1
-            displayName: 'Checkout code'
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish Infrastructure Directory'
