@@ -158,7 +158,8 @@ resource "azurerm_key_vault" "main" {
   }
 }
 
-# Key Vault Access Policy for current user/service principal
+# Key Vault Access Policy for current service principal (tfAzureDevOps)
+# Grants Get, List, and Set permissions (plus additional management permissions)
 resource "azurerm_key_vault_access_policy" "current_user" {
   key_vault_id = azurerm_key_vault.main.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
