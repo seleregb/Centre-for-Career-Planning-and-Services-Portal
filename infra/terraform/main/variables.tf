@@ -167,7 +167,7 @@ variable "jwt_secret" {
 variable "subscription_required_role_assignments" {
   description = "Role assignments required for the subscription"
   type        = list(string)
-  default     = ["Contributor"]
+  default     = ["Contributor", "Key Vault Secrets Officer", "Key Vault Administrator"]
 }
 
 variable "acr_required_role_assignments" {
@@ -180,12 +180,6 @@ variable "storage_required_role_assignments" {
   description = "Role assignments required for the storage account"
   type        = list(string)
   default     = ["Storage Blob Data Contributor", "Storage Blob Data Reader"]
-}
-
-variable "key_vault_required_role_assignments" {
-  description = "Role assignments required for the key vault"
-  type        = list(string)
-  default     = ["Key Vault Secrets Officer", "Key Vault Administrator"]
 }
 
 variable "resource_group_required_role_assignments" {

@@ -171,15 +171,6 @@ resource "azurerm_key_vault_access_policy" "current_user" {
   ]
 }
 
-# Role Assignments for Key Vault
-resource "azurerm_key_vault_access_policy" "key_vault" {
-  for_each     = toset(var.key_vault_required_role_assignments)
-  key_vault_id = azurerm_key_vault.main.id
-  tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = data.azuread_service_principal.current_sp.object_id
-  depends_on   = [azurerm_key_vault.main]
-}
-
 # App Service Plan for Backend
 resource "azurerm_service_plan" "backend" {
   name                = "${var.app_name}-asp-backend-${var.environment}"
