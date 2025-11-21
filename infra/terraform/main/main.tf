@@ -41,7 +41,6 @@ data "azurerm_subscription" "current" {}
 
 data "azuread_service_principal" "current_sp" {
   display_name = "tfAzureDevOps"
-  client_id    = data.azurerm_client_config.current.client_id
 }
 
 # Role Assignments for Subscription
