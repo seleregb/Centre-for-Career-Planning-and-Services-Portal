@@ -12,7 +12,7 @@ trigger:
 variables:
   imageRepositoryFrontend: ccps-portal/frontend
   imageRepositoryBackend: ccps-portal/backend
-  dockerRegistryServiceConnection: 'DockerDev' # change to your service connection name
+  dockerRegistryServiceConnection: 'DockerDevOps' # change to your service connection name
 
 stages:
   - stage: Build
