@@ -45,10 +45,11 @@ data "azuread_service_principal" "current_sp" {
 
 # Role Assignments for Subscription
 resource "azurerm_role_assignment" "subscription" {
-  for_each             = toset(var.subscription_required_role_assignments)
-  scope                = data.azurerm_subscription.current.id
-  role_definition_name = each.value
-  principal_id         = data.azuread_service_principal.current_sp.object_id
+  for_each                         = toset(var.subscription_required_role_assignments)
+  scope                            = data.azurerm_subscription.current.id
+  role_definition_name             = each.value
+  principal_id                     = data.azuread_service_principal.current_sp.object_id
+  skip_service_principal_aad_check = true
 }
 
 # Resource Group
@@ -64,11 +65,12 @@ resource "azurerm_resource_group" "main" {
 
 # Role Assignments for Resource Group
 resource "azurerm_role_assignment" "resource_group" {
-  for_each             = toset(var.resource_group_required_role_assignments)
-  scope                = azurerm_resource_group.main.id
-  role_definition_name = each.value
-  principal_id         = data.azuread_service_principal.current_sp.object_id
-  depends_on           = [azurerm_resource_group.main]
+  for_each                         = toset(var.resource_group_required_role_assignments)
+  scope                            = azurerm_resource_group.main.id
+  role_definition_name             = each.value
+  principal_id                     = data.azuread_service_principal.current_sp.object_id
+  depends_on                       = [azurerm_resource_group.main]
+  skip_service_principal_aad_check = true
 }
 
 # General-purpose v2 Storage Account
@@ -92,11 +94,12 @@ resource "azurerm_storage_account" "main" {
 
 # Role Assignments for Storage Account
 resource "azurerm_role_assignment" "storage_account" {
-  for_each             = toset(var.storage_required_role_assignments)
-  scope                = azurerm_storage_account.main.id
-  role_definition_name = each.value
-  principal_id         = data.azuread_service_principal.current_sp.object_id
-  depends_on           = [azurerm_storage_account.main]
+  for_each                         = toset(var.storage_required_role_assignments)
+  scope                            = azurerm_storage_account.main.id
+  role_definition_name             = each.value
+  principal_id                     = data.azuread_service_principal.current_sp.object_id
+  depends_on                       = [azurerm_storage_account.main]
+  skip_service_principal_aad_check = true
 }
 
 # Azure Container Registry
@@ -115,11 +118,12 @@ resource "azurerm_container_registry" "main" {
 
 # Role Assignments for Azure Container Registry
 resource "azurerm_role_assignment" "acr" {
-  for_each             = toset(var.acr_required_role_assignments)
-  scope                = azurerm_container_registry.main.id
-  role_definition_name = each.value
-  principal_id         = data.azuread_service_principal.current_sp.object_id
-  depends_on           = [azurerm_container_registry.main]
+  for_each                         = toset(var.acr_required_role_assignments)
+  scope                            = azurerm_container_registry.main.id
+  role_definition_name             = each.value
+  principal_id                     = data.azuread_service_principal.current_sp.object_id
+  depends_on                       = [azurerm_container_registry.main]
+  skip_service_principal_aad_check = true
 }
 
 # Key Vault for secrets management
@@ -171,82 +175,216 @@ resource "azurerm_key_vault_access_policy" "current_user" {
   ]
 }
 
-# App Service Plan for Backend
-resource "azurerm_service_plan" "backend" {
-  name                = "${var.app_name}-asp-backend-${var.environment}"
+# Log Analytics Workspace for Container Apps (must be created before Container Apps Environment)
+resource "azurerm_log_analytics_workspace" "main" {
+  name                = "${var.app_name}-law-${var.environment}"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
-  os_type             = "Linux"
-  sku_name            = var.backend_sku
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
 
   tags = {
     Environment = var.environment
     Application = var.app_name
-    Component   = "backend"
   }
 }
 
-# App Service for Backend Container
-resource "azurerm_linux_web_app" "backend" {
-  name                = "${var.app_name}-backend-${var.environment}"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  service_plan_id     = azurerm_service_plan.backend.id
+# Container Apps Environment (shared environment for both apps)
+resource "azurerm_container_app_environment" "main" {
+  name                       = "${var.app_name}-env-${var.environment}"
+  location                   = azurerm_resource_group.main.location
+  resource_group_name        = azurerm_resource_group.main.name
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
 
-  site_config {
-    always_on     = var.backend_always_on
-    http2_enabled = var.backend_http2_enabled
-
-    # Container configuration
-    application_stack {
-      docker_image_name   = "${var.app_name}/backend:latest"
-      docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
-    }
-
-    # Security settings
-    minimum_tls_version = var.backend_minimum_tls_version
-    ftps_state          = var.backend_ftps_state
+  tags = {
+    Environment = var.environment
+    Application = var.app_name
   }
+}
 
-  app_settings = {
-    "DOCKER_REGISTRY_SERVER_URL"          = "https://${azurerm_container_registry.main.login_server}"
-    "DOCKER_REGISTRY_SERVER_USERNAME"     = azurerm_container_registry.main.admin_username
-    "DOCKER_REGISTRY_SERVER_PASSWORD"     = azurerm_container_registry.main.admin_password
-    "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
-    "NODE_ENV"                            = var.environment
-    "PORT"                                = "3000"
-    "KEY_VAULT_NAME"                      = azurerm_key_vault.main.name
-
-    # CORS configuration - will be updated after frontend is created (see null_resource below)
-    # "FRONTEND_URL" = "https://${azurerm_linux_web_app.frontend.default_hostname}"
-
-    # Reference MongoDB connection string from Key Vault
-    "MONGODB_URI" = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.mongodb_connection_string.id})"
-    "JWT_SECRET"  = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.jwt_secret.id})"
-  }
+# Container App for Backend
+resource "azurerm_container_app" "backend" {
+  name                         = "${var.app_name}-backend-${var.environment}"
+  container_app_environment_id = azurerm_container_app_environment.main.id
+  resource_group_name          = azurerm_resource_group.main.name
+  revision_mode                = var.container_app_revision_mode
 
   identity {
     type = "SystemAssigned"
   }
 
+  registry {
+    server               = azurerm_container_registry.main.login_server
+    username             = azurerm_container_registry.main.admin_username
+    password_secret_name = "registry-password"
+  }
+
+  secret {
+    name  = "registry-password"
+    value = azurerm_container_registry.main.admin_password
+  }
+
+  secret {
+    name  = "mongodb-uri"
+    value = var.mongodb_atlas_connection_string
+  }
+
+  secret {
+    name  = "jwt-secret"
+    value = var.jwt_secret
+  }
+
+  template {
+    min_replicas = var.backend_min_replicas
+    max_replicas = var.backend_max_replicas
+
+    container {
+      name   = "backend"
+      image  = "${azurerm_container_registry.main.login_server}/${var.app_name}/backend:latest"
+      cpu    = var.backend_cpu
+      memory = var.backend_memory
+
+      env {
+        name  = "NODE_ENV"
+        value = var.environment
+      }
+
+      env {
+        name  = "PORT"
+        value = "5500"
+      }
+
+      # FRONTEND_URL for CORS - using external URL
+      env {
+        name  = "FRONTEND_URL"
+        value = "https://${azurerm_container_app.frontend.ingress[0].fqdn}"
+      }
+
+      env {
+        name        = "MONGODB_URI"
+        secret_name = "mongodb-uri"
+      }
+
+      env {
+        name        = "JWT_SECRET"
+        secret_name = "jwt-secret"
+      }
+
+      liveness_probe {
+        transport        = "HTTP"
+        path             = "/api/health"
+        port             = 5500
+        interval_seconds = 30
+      }
+
+      readiness_probe {
+        transport        = "HTTP"
+        path             = "/api/health"
+        port             = 5500
+        interval_seconds = 10
+      }
+    }
+  }
+
+  ingress {
+    external_enabled           = true
+    target_port                = 5500
+    transport                  = "http"
+    allow_insecure_connections = false
+
+    traffic_weight {
+      percentage      = 100
+      latest_revision = true
+    }
+  }
+
   tags = {
     Environment = var.environment
     Application = var.app_name
     Component   = "backend"
   }
 
-  lifecycle {
-    ignore_changes = [
-      app_settings["FRONTEND_URL"]
-    ]
+  depends_on = [
+    azurerm_container_app.frontend
+  ]
+}
+
+# Container App for Frontend
+resource "azurerm_container_app" "frontend" {
+  name                         = "${var.app_name}-frontend-${var.environment}"
+  container_app_environment_id = azurerm_container_app_environment.main.id
+  resource_group_name          = azurerm_resource_group.main.name
+  revision_mode                = var.container_app_revision_mode
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  registry {
+    server               = azurerm_container_registry.main.login_server
+    username             = azurerm_container_registry.main.admin_username
+    password_secret_name = "registry-password"
+  }
+
+  secret {
+    name  = "registry-password"
+    value = azurerm_container_registry.main.admin_password
+  }
+
+  template {
+    min_replicas = var.frontend_min_replicas
+    max_replicas = var.frontend_max_replicas
+
+    container {
+      name   = "frontend"
+      image  = "${azurerm_container_registry.main.login_server}/${var.app_name}/frontend:latest"
+      cpu    = var.frontend_cpu
+      memory = var.frontend_memory
+
+      # Note: VITE_BACKEND_URL must be set during Docker build via build args
+      # Vite environment variables are baked into the build at compile time
+      # This env var is not used at runtime, but kept for documentation
+
+      liveness_probe {
+        transport        = "HTTP"
+        path             = "/health"
+        port             = 5173
+        interval_seconds = 30
+      }
+
+      readiness_probe {
+        transport        = "HTTP"
+        path             = "/health"
+        port             = 5173
+        interval_seconds = 10
+      }
+    }
+  }
+
+  ingress {
+    external_enabled           = true
+    target_port                = 5173
+    transport                  = "http"
+    allow_insecure_connections = false
+
+    traffic_weight {
+      percentage      = 100
+      latest_revision = true
+    }
+  }
+
+  tags = {
+    Environment = var.environment
+    Application = var.app_name
+    Component   = "frontend"
   }
 }
 
-# Grant backend app service access to Key Vault
+# Grant backend container app access to Key Vault
 resource "azurerm_key_vault_access_policy" "backend" {
   key_vault_id = azurerm_key_vault.main.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = azurerm_linux_web_app.backend.identity[0].principal_id
+  object_id    = azurerm_container_app.backend.identity[0].principal_id
 
   secret_permissions = [
     "Get",
@@ -254,67 +392,16 @@ resource "azurerm_key_vault_access_policy" "backend" {
   ]
 }
 
-# App Service Plan for Frontend
-resource "azurerm_service_plan" "frontend" {
-  name                = "${var.app_name}-asp-frontend-${var.environment}"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  os_type             = "Linux"
-  sku_name            = var.frontend_sku
+# Grant frontend container app access to Key Vault (if needed in future)
+resource "azurerm_key_vault_access_policy" "frontend" {
+  key_vault_id = azurerm_key_vault.main.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = azurerm_container_app.frontend.identity[0].principal_id
 
-  tags = {
-    Environment = var.environment
-    Application = var.app_name
-    Component   = "frontend"
-  }
-}
-
-# App Service for Frontend Container
-resource "azurerm_linux_web_app" "frontend" {
-  name                = "${var.app_name}-frontend-${var.environment}"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  service_plan_id     = azurerm_service_plan.frontend.id
-
-  site_config {
-    always_on     = var.frontend_always_on
-    http2_enabled = var.frontend_http2_enabled
-
-    # Container configuration
-    application_stack {
-      docker_image_name   = "${var.app_name}/frontend:latest"
-      docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
-    }
-
-    # Security settings
-    minimum_tls_version = var.frontend_minimum_tls_version
-    ftps_state          = var.frontend_ftps_state
-  }
-
-  app_settings = {
-    "DOCKER_REGISTRY_SERVER_URL"          = "https://${azurerm_container_registry.main.login_server}"
-    "DOCKER_REGISTRY_SERVER_USERNAME"     = azurerm_container_registry.main.admin_username
-    "DOCKER_REGISTRY_SERVER_PASSWORD"     = azurerm_container_registry.main.admin_password
-    "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
-    "WEBSITES_PORT"                       = "80"
-
-    # Backend API URL - will be updated after backend is created (see null_resource below)
-    # Note: Vite requires this at build time, so it should be set during Docker build
-    # This is provided for runtime configuration if needed
-    # "VITE_API_URL" = "https://${azurerm_linux_web_app.backend.default_hostname}"
-  }
-
-  tags = {
-    Environment = var.environment
-    Application = var.app_name
-    Component   = "frontend"
-  }
-
-  lifecycle {
-    ignore_changes = [
-      app_settings["VITE_API_URL"]
-    ]
-  }
+  secret_permissions = [
+    "Get",
+    "List"
+  ]
 }
 
 # Key Vault Secret for MongoDB Atlas Connection String
@@ -345,50 +432,6 @@ resource "azurerm_key_vault_secret" "jwt_secret" {
   }
 }
 
-# Update app settings after both apps are created to set cross-references
-# This breaks the circular dependency by updating settings after resources exist
-resource "null_resource" "update_backend_cors" {
-  depends_on = [
-    azurerm_linux_web_app.backend,
-    azurerm_linux_web_app.frontend
-  ]
-
-  triggers = {
-    backend_id   = azurerm_linux_web_app.backend.id
-    frontend_id  = azurerm_linux_web_app.frontend.id
-    frontend_url = "https://${azurerm_linux_web_app.frontend.default_hostname}"
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      az webapp config appsettings set \
-        --name ${azurerm_linux_web_app.backend.name} \
-        --resource-group ${azurerm_resource_group.main.name} \
-        --settings FRONTEND_URL="https://${azurerm_linux_web_app.frontend.default_hostname}" \
-        --output none
-    EOT
-  }
-}
-
-resource "null_resource" "update_frontend_api_url" {
-  depends_on = [
-    azurerm_linux_web_app.backend,
-    azurerm_linux_web_app.frontend
-  ]
-
-  triggers = {
-    backend_id  = azurerm_linux_web_app.backend.id
-    frontend_id = azurerm_linux_web_app.frontend.id
-    backend_url = "https://${azurerm_linux_web_app.backend.default_hostname}"
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      az webapp config appsettings set \
-        --name ${azurerm_linux_web_app.frontend.name} \
-        --resource-group ${azurerm_resource_group.main.name} \
-        --settings VITE_API_URL="https://${azurerm_linux_web_app.backend.default_hostname}" \
-        --output none
-    EOT
-  }
-}
+# Note: Container Apps have built-in service discovery, so no need for null_resource
+# Apps in the same environment can communicate using their names as hostnames
+# External ingress URLs are automatically available via ingress[0].fqdn

@@ -15,24 +15,29 @@ output "key_vault_uri" {
   value       = azurerm_key_vault.main.vault_uri
 }
 
-output "backend_app_service_name" {
-  description = "Name of the backend App Service"
-  value       = azurerm_linux_web_app.backend.name
+output "container_app_environment_name" {
+  description = "Name of the Container Apps Environment"
+  value       = azurerm_container_app_environment.main.name
 }
 
-output "backend_app_service_url" {
-  description = "URL of the backend App Service"
-  value       = "https://${azurerm_linux_web_app.backend.default_hostname}"
+output "backend_container_app_name" {
+  description = "Name of the backend Container App"
+  value       = azurerm_container_app.backend.name
 }
 
-output "frontend_app_service_name" {
-  description = "Name of the frontend App Service"
-  value       = azurerm_linux_web_app.frontend.name
+output "backend_container_app_url" {
+  description = "URL of the backend Container App"
+  value       = "https://${azurerm_container_app.backend.ingress[0].fqdn}"
 }
 
-output "frontend_app_service_url" {
-  description = "URL of the frontend App Service"
-  value       = "https://${azurerm_linux_web_app.frontend.default_hostname}"
+output "frontend_container_app_name" {
+  description = "Name of the frontend Container App"
+  value       = azurerm_container_app.frontend.name
+}
+
+output "frontend_container_app_url" {
+  description = "URL of the frontend Container App"
+  value       = "https://${azurerm_container_app.frontend.ingress[0].fqdn}"
 }
 
 output "acr_name" {
@@ -46,8 +51,14 @@ output "acr_login_server" {
 }
 
 output "backend_identity_principal_id" {
-  description = "Principal ID of the backend App Service managed identity"
-  value       = azurerm_linux_web_app.backend.identity[0].principal_id
+  description = "Principal ID of the backend Container App managed identity"
+  value       = azurerm_container_app.backend.identity[0].principal_id
+  sensitive   = true
+}
+
+output "frontend_identity_principal_id" {
+  description = "Principal ID of the frontend Container App managed identity"
+  value       = azurerm_container_app.frontend.identity[0].principal_id
   sensitive   = true
 }
 

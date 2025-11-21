@@ -51,65 +51,61 @@ variable "key_vault_network_acls" {
   default = null
 }
 
-# Backend App Service Configuration
-variable "backend_sku" {
-  description = "SKU for backend App Service Plan"
+# Container Apps Configuration
+variable "container_app_revision_mode" {
+  description = "Revision mode for Container Apps (Single or Multiple)"
   type        = string
+  default     = "Single"
 }
 
-variable "backend_always_on" {
-  description = "Enable Always On for backend App Service"
-  type        = bool
-  default     = false
+# Backend Container App Configuration
+variable "backend_min_replicas" {
+  description = "Minimum number of replicas for backend Container App"
+  type        = number
+  default     = 1
 }
 
-variable "backend_http2_enabled" {
-  description = "Enable HTTP/2 for backend App Service"
-  type        = bool
-  default     = false
+variable "backend_max_replicas" {
+  description = "Maximum number of replicas for backend Container App"
+  type        = number
+  default     = 10
 }
 
-variable "backend_minimum_tls_version" {
-  description = "Minimum TLS version for backend App Service"
+variable "backend_cpu" {
+  description = "CPU allocation for backend container (e.g., 0.25, 0.5, 1.0, 2.0)"
+  type        = number
+  default     = 0.5
+}
+
+variable "backend_memory" {
+  description = "Memory allocation for backend container (e.g., 0.5Gi, 1.0Gi, 2.0Gi)"
   type        = string
-  default     = "1.2"
+  default     = "1.0Gi"
 }
 
-variable "backend_ftps_state" {
-  description = "FTPS state for backend App Service"
+# Frontend Container App Configuration
+variable "frontend_min_replicas" {
+  description = "Minimum number of replicas for frontend Container App"
+  type        = number
+  default     = 1
+}
+
+variable "frontend_max_replicas" {
+  description = "Maximum number of replicas for frontend Container App"
+  type        = number
+  default     = 10
+}
+
+variable "frontend_cpu" {
+  description = "CPU allocation for frontend container (e.g., 0.25, 0.5, 1.0, 2.0)"
+  type        = number
+  default     = 0.25
+}
+
+variable "frontend_memory" {
+  description = "Memory allocation for frontend container (e.g., 0.5Gi, 1.0Gi, 2.0Gi)"
   type        = string
-  default     = "Disabled"
-}
-
-# Frontend Configuration
-variable "frontend_sku" {
-  description = "SKU for frontend App Service Plan"
-  type        = string
-  default     = "B1"
-}
-
-variable "frontend_always_on" {
-  description = "Enable Always On for frontend App Service"
-  type        = bool
-  default     = false
-}
-
-variable "frontend_http2_enabled" {
-  description = "Enable HTTP/2 for frontend App Service"
-  type        = bool
-  default     = false
-}
-
-variable "frontend_minimum_tls_version" {
-  description = "Minimum TLS version for frontend App Service"
-  type        = string
-  default     = "1.2"
-}
-
-variable "frontend_ftps_state" {
-  description = "FTPS state for frontend App Service"
-  type        = string
-  default     = "Disabled"
+  default     = "0.5Gi"
 }
 
 # Azure Container Registry Configuration

@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ccps-backend
+    ports:
+      - "5500:5500"
+    env_file:
+      - ./backend/.env
+    environment:
+      - PORT=${PORT:-5500}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+      - NODE_ENV=${NODE_ENV:-production}
+    networks:
+      - ccps-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5500/api/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:5500}
+    container_name: ccps-frontend
+    ports:
+      - "5173:5173"
+    env_file:
+      - ./frontend/.env
+    networks:
+      - ccps-network
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5173/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+networks:
+  ccps-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
