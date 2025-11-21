@@ -29,18 +29,27 @@ provider "azurerm" {
   }
 }
 
+provider "azuread" {
+  tenant_id = data.azurerm_client_config.current.tenant_id
+}
+
 # Get current Azure client configuration
 data "azurerm_client_config" "current" {}
 
 # Get subscription information
 data "azurerm_subscription" "current" {}
 
+data "azuread_service_principal" "current_sp" {
+  display_name = "tfAzureDevOps"
+  client_id    = data.azurerm_client_config.current.client_id
+}
+
 # Role Assignments for Subscription
 resource "azurerm_role_assignment" "subscription" {
   for_each             = toset(var.subscription_required_role_assignments)
   scope                = data.azurerm_subscription.current.id
   role_definition_name = each.value
-  principal_id         = data.azurerm_client_config.current.object_id
+  principal_id         = data.azuread_service_principal.current_sp.object_id
 }
 
 # Resource Group
@@ -59,7 +68,7 @@ resource "azurerm_role_assignment" "resource_group" {
   for_each             = toset(var.resource_group_required_role_assignments)
   scope                = azurerm_resource_group.main.id
   role_definition_name = each.value
-  principal_id         = data.azurerm_client_config.current.object_id
+  principal_id         = data.azuread_service_principal.current_sp.object_id
   depends_on           = [azurerm_resource_group.main]
 }
 
@@ -87,7 +96,7 @@ resource "azurerm_role_assignment" "storage_account" {
   for_each             = toset(var.storage_required_role_assignments)
   scope                = azurerm_storage_account.main.id
   role_definition_name = each.value
-  principal_id         = data.azurerm_client_config.current.object_id
+  principal_id         = data.azuread_service_principal.current_sp.object_id
   depends_on           = [azurerm_storage_account.main]
 }
 
@@ -110,7 +119,7 @@ resource "azurerm_role_assignment" "acr" {
   for_each             = toset(var.acr_required_role_assignments)
   scope                = azurerm_container_registry.main.id
   role_definition_name = each.value
-  principal_id         = data.azurerm_client_config.current.object_id
+  principal_id         = data.azuread_service_principal.current_sp.object_id
   depends_on           = [azurerm_container_registry.main]
 }
 
@@ -150,7 +159,7 @@ resource "azurerm_key_vault" "main" {
 resource "azurerm_key_vault_access_policy" "current_user" {
   key_vault_id = azurerm_key_vault.main.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = data.azurerm_client_config.current.object_id
+  object_id    = data.azuread_service_principal.current_sp.object_id
 
   secret_permissions = [
     "Get",
@@ -168,7 +177,7 @@ resource "azurerm_key_vault_access_policy" "key_vault" {
   for_each     = toset(var.key_vault_required_role_assignments)
   key_vault_id = azurerm_key_vault.main.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = data.azurerm_client_config.current.object_id
+  object_id    = data.azuread_service_principal.current_sp.object_id
   depends_on   = [azurerm_key_vault.main]
 }
 
