@@ -30,9 +30,9 @@ variable "prevent_resource_group_deletion" {
 
 # Key Vault Configuration
 variable "key_vault_soft_delete_retention_days" {
-  description = "Number of days to retain soft-deleted Key Vault"
+  description = "Number of days to retain soft-deleted Key Vault. Set to 0 for immediate deletion when resource group is deleted."
   type        = number
-  default     = 7
+  default     = 0
 }
 
 variable "key_vault_purge_protection_enabled" {
@@ -125,16 +125,72 @@ variable "acr_admin_enabled" {
   default     = true
 }
 
+variable "storage_account_tier" {
+  description = "Tier for the general-purpose storage account"
+  type        = string
+  default     = "Standard"
+}
+
+variable "storage_account_replication_type" {
+  description = "Replication type for the storage account"
+  type        = string
+  default     = "LRS"
+}
+
+variable "storage_account_kind" {
+  description = "Kind of storage account to create"
+  type        = string
+  default     = "StorageV2"
+}
+
+variable "storage_shared_access_key_enabled" {
+  description = "Enable shared access keys for the storage account"
+  type        = bool
+  default     = true
+}
+
 # Secrets (should be provided via .tfvars or environment variables)
 variable "mongodb_atlas_connection_string" {
   description = "MongoDB Atlas connection string"
   type        = string
   sensitive   = true
+  default     = ""
 }
 
 variable "jwt_secret" {
   description = "JWT secret for authentication"
   type        = string
   sensitive   = true
+  default     = ""
+}
+
+variable "subscription_required_role_assignments" {
+  description = "Role assignments required for the subscription"
+  type        = list(string)
+  default     = ["Contributor"]
+}
+
+variable "acr_required_role_assignments" {
+  description = "Role assignments required for the ACR"
+  type        = list(string)
+  default     = ["AcrPush", "Container Registry Repository Contributor"]
+}
+
+variable "storage_required_role_assignments" {
+  description = "Role assignments required for the storage account"
+  type        = list(string)
+  default     = ["Storage Blob Data Contributor", "Storage Blob Data Reader"]
+}
+
+variable "key_vault_required_role_assignments" {
+  description = "Role assignments required for the key vault"
+  type        = list(string)
+  default     = ["Key Vault Secrets Officer", "Key Vault Administrator"]
+}
+
+variable "resource_group_required_role_assignments" {
+  description = "Role assignments required for the resource group"
+  type        = list(string)
+  default     = ["Contributor"]
 }
 

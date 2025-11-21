@@ -9,8 +9,10 @@ app_name            = "ccps-portal"
 prevent_resource_group_deletion = true
 
 # Key Vault Configuration
-key_vault_soft_delete_retention_days = 90
-key_vault_purge_protection_enabled   = true
+# Set to 0 for immediate deletion when resource group is deleted
+# Note: Disabling purge protection reduces security but allows immediate deletion
+key_vault_soft_delete_retention_days = 0
+key_vault_purge_protection_enabled   = false
 key_vault_network_acls = {
   default_action = "Deny"
   bypass         = "AzureServices"
