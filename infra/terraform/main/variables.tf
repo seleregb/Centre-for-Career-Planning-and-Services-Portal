@@ -184,3 +184,9 @@ variable "resource_group_required_role_assignments" {
   default     = ["Contributor"]
 }
 
+variable "role_assignment_refresh_trigger" {
+  description = "Trigger to force recreation of role assignments. Change this value to force all role assignments to be recreated."
+  type        = string
+  default     = "1"
+}
+

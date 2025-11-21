@@ -9,6 +9,14 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 3.0"
     }
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = "~> 2.0"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.0"
+    }
   }
 
   backend "azurerm" {
@@ -43,6 +51,13 @@ data "azuread_service_principal" "current_sp" {
   display_name = "tfAzureDevOps"
 }
 
+# Null resource to trigger role assignment recreation
+resource "null_resource" "role_assignment_trigger" {
+  triggers = {
+    refresh_trigger = var.role_assignment_refresh_trigger
+  }
+}
+
 # Role Assignments for Subscription
 resource "azurerm_role_assignment" "subscription" {
   for_each                         = toset(var.subscription_required_role_assignments)
@@ -50,6 +65,12 @@ resource "azurerm_role_assignment" "subscription" {
   role_definition_name             = each.value
   principal_id                     = data.azuread_service_principal.current_sp.object_id
   skip_service_principal_aad_check = true
+
+  lifecycle {
+    replace_triggered_by = [
+      null_resource.role_assignment_trigger
+    ]
+  }
 }
 
 # Resource Group
@@ -71,6 +92,12 @@ resource "azurerm_role_assignment" "resource_group" {
   principal_id                     = data.azuread_service_principal.current_sp.object_id
   depends_on                       = [azurerm_resource_group.main]
   skip_service_principal_aad_check = true
+
+  lifecycle {
+    replace_triggered_by = [
+      null_resource.role_assignment_trigger
+    ]
+  }
 }
 
 # General-purpose v2 Storage Account
@@ -100,6 +127,12 @@ resource "azurerm_role_assignment" "storage_account" {
   principal_id                     = data.azuread_service_principal.current_sp.object_id
   depends_on                       = [azurerm_storage_account.main]
   skip_service_principal_aad_check = true
+
+  lifecycle {
+    replace_triggered_by = [
+      null_resource.role_assignment_trigger
+    ]
+  }
 }
 
 # Azure Container Registry
@@ -124,6 +157,12 @@ resource "azurerm_role_assignment" "acr" {
   principal_id                     = data.azuread_service_principal.current_sp.object_id
   depends_on                       = [azurerm_container_registry.main]
   skip_service_principal_aad_check = true
+
+  lifecycle {
+    replace_triggered_by = [
+      null_resource.role_assignment_trigger
+    ]
+  }
 }
 
 # Key Vault for secrets management
