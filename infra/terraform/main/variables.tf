@@ -32,7 +32,7 @@ variable "prevent_resource_group_deletion" {
 variable "key_vault_soft_delete_retention_days" {
   description = "Number of days to retain soft-deleted Key Vault. Set to 0 for immediate deletion when resource group is deleted."
   type        = number
-  default     = 0
+  default     = 7
 }
 
 variable "key_vault_purge_protection_enabled" {
