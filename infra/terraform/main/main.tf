@@ -13,10 +13,6 @@ terraform {
       source  = "hashicorp/azuread"
       version = "~> 2.0"
     }
-    null = {
-      source  = "hashicorp/null"
-      version = "~> 3.0"
-    }
   }
 
   backend "azurerm" {
@@ -51,28 +47,6 @@ data "azuread_service_principal" "current_sp" {
   display_name = "tfAzureDevOps"
 }
 
-# Null resource to trigger role assignment recreation
-resource "null_resource" "role_assignment_trigger" {
-  triggers = {
-    refresh_trigger = var.role_assignment_refresh_trigger
-  }
-}
-
-# Role Assignments for Subscription
-resource "azurerm_role_assignment" "subscription" {
-  for_each                         = toset(var.subscription_required_role_assignments)
-  scope                            = data.azurerm_subscription.current.id
-  role_definition_name             = each.value
-  principal_id                     = data.azuread_service_principal.current_sp.object_id
-  skip_service_principal_aad_check = true
-
-  lifecycle {
-    replace_triggered_by = [
-      null_resource.role_assignment_trigger
-    ]
-  }
-}
-
 # Resource Group
 resource "azurerm_resource_group" "main" {
   name     = var.resource_group_name
@@ -81,22 +55,6 @@ resource "azurerm_resource_group" "main" {
   tags = {
     Environment = var.environment
     Application = var.app_name
-  }
-}
-
-# Role Assignments for Resource Group
-resource "azurerm_role_assignment" "resource_group" {
-  for_each                         = toset(var.resource_group_required_role_assignments)
-  scope                            = azurerm_resource_group.main.id
-  role_definition_name             = each.value
-  principal_id                     = data.azuread_service_principal.current_sp.object_id
-  depends_on                       = [azurerm_resource_group.main]
-  skip_service_principal_aad_check = true
-
-  lifecycle {
-    replace_triggered_by = [
-      null_resource.role_assignment_trigger
-    ]
   }
 }
 
@@ -119,22 +77,6 @@ resource "azurerm_storage_account" "main" {
   }
 }
 
-# Role Assignments for Storage Account
-resource "azurerm_role_assignment" "storage_account" {
-  for_each                         = toset(var.storage_required_role_assignments)
-  scope                            = azurerm_storage_account.main.id
-  role_definition_name             = each.value
-  principal_id                     = data.azuread_service_principal.current_sp.object_id
-  depends_on                       = [azurerm_storage_account.main]
-  skip_service_principal_aad_check = true
-
-  lifecycle {
-    replace_triggered_by = [
-      null_resource.role_assignment_trigger
-    ]
-  }
-}
-
 # Azure Container Registry
 resource "azurerm_container_registry" "main" {
   name                = "${replace(var.app_name, "-", "")}acr${var.environment}"
@@ -146,22 +88,6 @@ resource "azurerm_container_registry" "main" {
   tags = {
     Environment = var.environment
     Application = var.app_name
-  }
-}
-
-# Role Assignments for Azure Container Registry
-resource "azurerm_role_assignment" "acr" {
-  for_each                         = toset(var.acr_required_role_assignments)
-  scope                            = azurerm_container_registry.main.id
-  role_definition_name             = each.value
-  principal_id                     = data.azuread_service_principal.current_sp.object_id
-  depends_on                       = [azurerm_container_registry.main]
-  skip_service_principal_aad_check = true
-
-  lifecycle {
-    replace_triggered_by = [
-      null_resource.role_assignment_trigger
-    ]
   }
 }
 

@@ -160,33 +160,3 @@ variable "jwt_secret" {
   default     = ""
 }
 
-variable "subscription_required_role_assignments" {
-  description = "Role assignments required for the subscription"
-  type        = list(string)
-  default     = ["Contributor", "Key Vault Secrets Officer", "Key Vault Administrator"]
-}
-
-variable "acr_required_role_assignments" {
-  description = "Role assignments required for the ACR"
-  type        = list(string)
-  default     = ["AcrPush", "Container Registry Repository Contributor"]
-}
-
-variable "storage_required_role_assignments" {
-  description = "Role assignments required for the storage account"
-  type        = list(string)
-  default     = ["Storage Blob Data Contributor", "Storage Blob Data Reader"]
-}
-
-variable "resource_group_required_role_assignments" {
-  description = "Role assignments required for the resource group"
-  type        = list(string)
-  default     = ["Contributor"]
-}
-
-variable "role_assignment_refresh_trigger" {
-  description = "Trigger to force recreation of role assignments. Change this value to force all role assignments to be recreated."
-  type        = string
-  default     = "1"
-}
-

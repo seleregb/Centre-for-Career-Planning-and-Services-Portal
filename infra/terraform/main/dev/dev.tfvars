@@ -17,8 +17,6 @@ key_vault_network_acls               = null
 acr_sku                   = "Basic"
 acr_admin_enabled         = true
 
-role_assignment_refresh_trigger = "2"
-
 # Secrets should be provided via environment variables or Azure Key Vault
 # mongodb_atlas_connection_string = ""
 # jwt_secret = ""
