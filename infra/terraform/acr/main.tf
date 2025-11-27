@@ -29,21 +29,15 @@ provider "azurerm" {
 data "azurerm_client_config" "current" {}
 
 # Resource Group
-resource "azurerm_resource_group" "main" {
+data "azurerm_resource_group" "acr" {
   name     = var.resource_group_name
-  location = var.location
-
-  tags = {
-    Environment = var.environment
-    Application = var.app_name
-  }
 }
 
 # General-purpose v2 Storage Account
 resource "azurerm_storage_account" "main" {
   name                            = "${substr(replace(var.app_name, "-", ""), 0, 18)}st${var.environment}"
-  resource_group_name             = azurerm_resource_group.main.name
-  location                        = azurerm_resource_group.main.location
+  resource_group_name             = data.azurerm_resource_group.acr.name
+  location                        = data.azurerm_resource_group.acr.location
   account_tier                    = var.storage_account_tier
   account_replication_type        = var.storage_account_replication_type
   account_kind                    = var.storage_account_kind
@@ -61,8 +55,8 @@ resource "azurerm_storage_account" "main" {
 # Azure Container Registry
 resource "azurerm_container_registry" "main" {
   name                = "${replace(var.app_name, "-", "")}acr${var.environment}"
-  resource_group_name = azurerm_resource_group.main.name
-  location            = azurerm_resource_group.main.location
+  resource_group_name = data.azurerm_resource_group.acr.name
+  location            = data.azurerm_resource_group.acr.location
   sku                 = var.acr_sku           # Basic, Standard, Premium
   admin_enabled       = var.acr_admin_enabled # true or false
 
