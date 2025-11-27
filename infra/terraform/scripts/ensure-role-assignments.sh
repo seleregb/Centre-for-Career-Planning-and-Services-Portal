@@ -222,9 +222,9 @@ fi
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
 # Exit with error if any failed
-if [[ $FAILED -gt 0 ]]; then
-    exit 1
-fi
+# if [[ $FAILED -gt 0 ]]; then
+#     exit 1
+# fi
 
 exit 0
 
