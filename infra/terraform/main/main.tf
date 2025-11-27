@@ -155,6 +155,13 @@ resource "azurerm_log_analytics_workspace" "main" {
   }
 }
 
+# Ensure Microsoft.App provider is registered
+resource "null_resource" "register_microsoft_app" {
+  provisioner "local-exec" {
+    command = "az provider register --namespace Microsoft.App"
+  }
+}
+
 # Container Apps Environment (shared environment for both apps)
 resource "azurerm_container_app_environment" "main" {
   name                       = "${var.app_name}-env-${var.environment}"
@@ -166,6 +173,8 @@ resource "azurerm_container_app_environment" "main" {
     Environment = var.environment
     Application = var.app_name
   }
+
+  depends_on = [null_resource.register_microsoft_app]
 }
 
 # Container App for Backend
