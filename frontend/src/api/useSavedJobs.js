@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+import { getBackendUrlSync } from '../utils/config.js';
+
+const BASE_URL = getBackendUrlSync();
 
 const api = axios.create({
   baseURL: BASE_URL,

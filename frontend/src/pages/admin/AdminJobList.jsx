@@ -3,7 +3,9 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 
-const ROOT = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+import { getBackendUrlSync } from '../../utils/config.js';
+
+const ROOT = getBackendUrlSync();
 const BASE_URL = ROOT.replace(/\/$/, '') + '/api';
 
 const AdminJobList = () => {

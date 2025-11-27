@@ -86,6 +86,27 @@ resource "azurerm_container_app_environment" "main" {
   depends_on = [null_resource.register_microsoft_app]
 }
 
+# Local values to construct URLs and break circular dependency
+locals {
+  # Construct frontend URL using environment's default domain pattern
+  # This breaks the circular dependency by not directly referencing frontend resource
+  # Azure Container Apps FQDN pattern: <app-name>.<default-domain>
+  frontend_fqdn = "${var.app_name}-frontend-${var.environment}.${replace(azurerm_container_app_environment.main.default_domain, "*.", "")}"
+  
+  # Construct backend URL using environment's default domain pattern
+  backend_fqdn = "${var.app_name}-backend-${var.environment}.${replace(azurerm_container_app_environment.main.default_domain, "*.", "")}"
+}
+
+data "azurerm_key_vault_secret" "mongodb_atlas_connection_string" {
+  name         = "MongoDBAtlasConnectionString"
+  key_vault_id = data.azurerm_key_vault.main.id
+}
+
+data "azurerm_key_vault_secret" "jwt_secret" {
+  name         = "JWTSecret"
+  key_vault_id = data.azurerm_key_vault.main.id
+}
+
 # Container App for Backend
 resource "azurerm_container_app" "backend" {
   name                         = "${var.app_name}-backend-${var.environment}"
@@ -110,12 +131,12 @@ resource "azurerm_container_app" "backend" {
 
   secret {
     name  = "mongodb-uri"
-    value = var.mongodb_atlas_connection_string
+    value = data.azurerm_key_vault_secret.mongodb_atlas_connection_string.value
   }
 
   secret {
     name  = "jwt-secret"
-    value = var.jwt_secret
+    value = data.azurerm_key_vault_secret.jwt_secret.value
   }
 
   template {
@@ -138,10 +159,10 @@ resource "azurerm_container_app" "backend" {
         value = "5500"
       }
 
-      # FRONTEND_URL for CORS - using external URL
+      # FRONTEND_URL for CORS - using constructed URL to break circular dependency
       env {
         name  = "FRONTEND_URL"
-        value = "https://${azurerm_container_app.frontend.ingress[0].fqdn}"
+        value = "https://${local.frontend_fqdn}"
       }
 
       env {
@@ -187,10 +208,6 @@ resource "azurerm_container_app" "backend" {
     Application = var.app_name
     Component   = "backend"
   }
-
-  depends_on = [
-    azurerm_container_app.frontend
-  ]
 }
 
 # Container App for Frontend
@@ -225,9 +242,13 @@ resource "azurerm_container_app" "frontend" {
       cpu    = var.frontend_cpu
       memory = var.frontend_memory
 
-      # Note: VITE_BACKEND_URL must be set during Docker build via build args
-      # Vite environment variables are baked into the build at compile time
-      # This env var is not used at runtime, but kept for documentation
+      # BACKEND_URL is used at container startup to generate config.json
+      # The Dockerfile entrypoint script reads this env var and creates config.json
+      # Using constructed URL to break circular dependency
+      env {
+        name  = "BACKEND_URL"
+        value = "https://${local.backend_fqdn}"
+      }
 
       liveness_probe {
         transport        = "HTTP"

@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import { getBackendUrlSync } from '../../utils/config.js';
 
-const BASE_URL =
-  import.meta.env.VITE_BACKEND_URL + "/api/alumni" ||
-  "http://localhost:3000/api/alumni";
+const BASE_URL = getBackendUrlSync().replace(/\/$/, '') + '/api/alumni';
 
 const useAlumniAdmin = () => {
   const [alumni, setAlumni] = useState([]);

@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const BACKEND_ROOT = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+import { getBackendUrlSync } from '../utils/config.js';
+
+const BACKEND_ROOT = getBackendUrlSync();
 const BASE_URL = BACKEND_ROOT.endsWith('/api')
   ? BACKEND_ROOT
   : BACKEND_ROOT.replace(/\/$/, '') + '/api';

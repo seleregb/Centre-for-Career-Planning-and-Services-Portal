@@ -1,7 +1,8 @@
 // frontend/src/api/jobsApi.js
+import { getBackendUrlSync } from '../utils/config.js';
 
-// 1. Define the Backend Root URL and the Base API URL
-const BACKEND_ROOT = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+// Get Backend Root URL from runtime config
+const BACKEND_ROOT = getBackendUrlSync();
 
 // This logic ensures BASE_URL is the root API path, e.g., 'http://localhost:3000/api'
 const BASE_URL = BACKEND_ROOT.endsWith('/api')

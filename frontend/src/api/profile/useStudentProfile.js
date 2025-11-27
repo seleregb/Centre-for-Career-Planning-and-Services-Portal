@@ -1,6 +1,6 @@
-console.log("VITE_BACKEND_URL is:", import.meta.env.VITE_BACKEND_URL);
+import { getBackendUrlSync } from '../../utils/config.js';
 
-const BASE_URL = import.meta.env.VITE_BACKEND_URL+"/api/profile" || "http://localhost:3000/api/profile";
+const BASE_URL = getBackendUrlSync().replace(/\/$/, '') + '/api/profile';
 
   export const createStudentProfile = async (userId, data) => {
     const res = await fetch(`${BASE_URL}/${userId}`, {

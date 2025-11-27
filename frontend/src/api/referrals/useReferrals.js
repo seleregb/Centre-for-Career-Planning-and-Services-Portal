@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-const BASE_URL = import.meta.env.VITE_BACKEND_URL+"/api" || 'http://localhost:3000/api';
+import { getBackendUrlSync } from '../../utils/config.js';
+
+const BASE_URL = getBackendUrlSync().replace(/\/$/, '') + '/api';
 
 export const useReferrals = () => {
     const [referrals, setReferrals] = useState([]);
