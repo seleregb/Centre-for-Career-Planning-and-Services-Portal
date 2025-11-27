@@ -24,27 +24,77 @@ stages:
           vmImage: ubuntu-latest
         steps:
           - task: Docker@2
-            displayName: Build and push frontend
+            displayName: Build and push frontend (dev)
             inputs:
               command: buildAndPush
               repository: $(imageRepositoryFrontend)
               dockerfile: frontend/Dockerfile
-              containerRegistry: $(dockerDeploymentSvc)
+              containerRegistry: $(dockerDeploymentDevSvc)
+              buildContext: frontend
+              arguments: --build-arg VITE_BACKEND_URL=$(devViteBackendUrl)
               tags: |
-                $(Build.BuildId)
-                $(Build.SourceBranchName)
                 latest
+                dev-$(Build.BuildId)
+                dev-$(Build.SourceBranchName)
           - task: Docker@2
-            displayName: Build and push backend
+            displayName: Build and push backend (dev)
             inputs:
               command: buildAndPush
               repository: $(imageRepositoryBackend)
               dockerfile: backend/Dockerfile
-              containerRegistry: $(dockerDeploymentSvc)
+              containerRegistry: $(dockerDeploymentDevSvc)
               tags: |
-                $(Build.BuildId)
-                $(Build.SourceBranchName)
+                dev-$(Build.BuildId)
+                dev-$(Build.SourceBranchName)
                 latest
+          # - task: Docker@2
+          #   displayName: Build and push frontend (stage)
+          #   inputs:
+          #     command: buildAndPush
+          #     repository: $(imageRepositoryFrontend)
+          #     dockerfile: frontend/Dockerfile
+          #     containerRegistry: $(dockerDeploymentStageSvc)
+          #     buildContext: frontend
+          #     arguments: --build-arg VITE_BACKEND_URL=$(stageViteBackendUrl)
+          #     tags: |
+          #       latest
+          #       stage-$(Build.BuildId)
+          #       stage-$(Build.SourceBranchName)
+          # - task: Docker@2
+          #   displayName: Build and push backend (stage)
+          #   inputs:
+          #     command: buildAndPush
+          #     repository: $(imageRepositoryBackend)
+          #     dockerfile: backend/Dockerfile
+          #     containerRegistry: $(dockerDeploymentStageSvc)
+          #     tags: |
+          #       latest
+          #       stage-$(Build.BuildId)
+          #       stage-$(Build.SourceBranchName)
+          # - task: Docker@2
+          #   displayName: Build and push frontend (prod)
+          #   inputs:
+          #     command: buildAndPush
+          #     repository: $(imageRepositoryFrontend)
+          #     dockerfile: frontend/Dockerfile
+          #     containerRegistry: $(dockerDeploymentProdSvc)
+          #     buildContext: frontend
+          #     arguments: --build-arg VITE_BACKEND_URL=$(prodViteBackendUrl)
+          #     tags: |
+          #       latest
+          #       prod-$(Build.BuildId)
+          #       prod-$(Build.SourceBranchName)
+          # - task: Docker@2
+          #   displayName: Build and push backend (prod)
+          #   inputs:
+          #     command: buildAndPush
+          #     repository: $(imageRepositoryBackend)
+          #     dockerfile: backend/Dockerfile
+          #     containerRegistry: $(dockerDeploymentProdSvc)
+          #     tags: |
+          #       latest
+          #       prod-$(Build.BuildId)
+          #       prod-$(Build.SourceBranchName)
           - task: PublishBuildArtifacts@1
             inputs:
               PathtoPublish: '$(System.DefaultWorkingDirectory)'
