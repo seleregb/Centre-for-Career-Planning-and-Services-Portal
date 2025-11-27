@@ -1,4 +1,4 @@
-# Variables for Terraform configuration
+# Variables for ACR Terraform configuration
 
 variable "environment" {
   description = "Environment name (dev, stage, prod)"
@@ -28,27 +28,17 @@ variable "prevent_resource_group_deletion" {
   default     = false
 }
 
-# Key Vault Configuration
-variable "key_vault_soft_delete_retention_days" {
-  description = "Number of days to retain soft-deleted Key Vault. Set to 0 for immediate deletion when resource group is deleted."
-  type        = number
-  default     = 7
+# Azure Container Registry Configuration
+variable "acr_sku" {
+  description = "SKU for Azure Container Registry (Basic, Standard, Premium)"
+  type        = string
+  default     = "Basic"
 }
 
-variable "key_vault_purge_protection_enabled" {
-  description = "Enable purge protection for Key Vault"
+variable "acr_admin_enabled" {
+  description = "Enable admin user for Azure Container Registry"
   type        = bool
-  default     = false
-}
-
-variable "key_vault_network_acls" {
-  description = "Network ACLs for Key Vault. Set to null to disable."
-  type = object({
-    default_action = string
-    bypass         = string
-    ip_rules       = list(string)
-  })
-  default = null
+  default     = true
 }
 
 variable "storage_account_tier" {
@@ -73,20 +63,5 @@ variable "storage_shared_access_key_enabled" {
   description = "Enable shared access keys for the storage account"
   type        = bool
   default     = true
-}
-
-# Secrets (should be provided via .tfvars or environment variables)
-variable "mongodb_atlas_connection_string" {
-  description = "MongoDB Atlas connection string"
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
-variable "jwt_secret" {
-  description = "JWT secret for authentication"
-  type        = string
-  sensitive   = true
-  default     = ""
 }
 

@@ -16,23 +16,65 @@ stages:
     displayName: 'Validate Terraform Configuration'
     jobs:
       - job: ValidateTerraform
-        displayName: 'Validate Terraform per Environment'
+        displayName: 'Validate Terraform Modules'
         pool:
           vmImage: ubuntu-latest
         strategy:
           matrix:
-            Dev:
+            Main_Dev:
+              module: main
               environment: dev
+              workingDirectory: 'infra/terraform/main'
               tfvarsFile: 'infra/terraform/main/dev/dev.tfvars'
               backendConfig: 'infra/terraform/main/dev/dev.conf'
-            Stage:
+            Main_Stage:
+              module: main
               environment: stage
+              workingDirectory: 'infra/terraform/main'
               tfvarsFile: 'infra/terraform/main/stage/stage.tfvars'
               backendConfig: 'infra/terraform/main/stage/stage.conf'
-            Prod:
+            Main_Prod:
+              module: main
               environment: prod
+              workingDirectory: 'infra/terraform/main'
               tfvarsFile: 'infra/terraform/main/prod/prod.tfvars'
               backendConfig: 'infra/terraform/main/prod/prod.conf'
+            ACR_Dev:
+              module: acr
+              environment: dev
+              workingDirectory: 'infra/terraform/acr'
+              tfvarsFile: 'infra/terraform/acr/dev/dev.tfvars'
+              backendConfig: 'infra/terraform/acr/dev/dev.conf'
+            ACR_Stage:
+              module: acr
+              environment: stage
+              workingDirectory: 'infra/terraform/acr'
+              tfvarsFile: 'infra/terraform/acr/stage/stage.tfvars'
+              backendConfig: 'infra/terraform/acr/stage/stage.conf'
+            ACR_Prod:
+              module: acr
+              environment: prod
+              workingDirectory: 'infra/terraform/acr'
+              tfvarsFile: 'infra/terraform/acr/prod/prod.tfvars'
+              backendConfig: 'infra/terraform/acr/prod/prod.conf'
+            ContainerApps_Dev:
+              module: container-apps
+              environment: dev
+              workingDirectory: 'infra/terraform/container-apps'
+              tfvarsFile: 'infra/terraform/container-apps/dev/dev.tfvars'
+              backendConfig: 'infra/terraform/container-apps/dev/dev.conf'
+            ContainerApps_Stage:
+              module: container-apps
+              environment: stage
+              workingDirectory: 'infra/terraform/container-apps'
+              tfvarsFile: 'infra/terraform/container-apps/stage/stage.tfvars'
+              backendConfig: 'infra/terraform/container-apps/stage/stage.conf'
+            ContainerApps_Prod:
+              module: container-apps
+              environment: prod
+              workingDirectory: 'infra/terraform/container-apps'
+              tfvarsFile: 'infra/terraform/container-apps/prod/prod.tfvars'
+              backendConfig: 'infra/terraform/container-apps/prod/prod.conf'
         steps:
 
           - task: TerraformInstaller@0
@@ -41,20 +83,22 @@ stages:
               terraformVersion: $(terraformVersion)
 
           - task: TerraformCLI@2
+            displayName: 'Terraform Init - $(module) ($(environment))'
             inputs:
               command: 'init'
               commandOptions: '-backend=false'
               backendType: 'azurerm'
               backendServiceArm: 'tfARM'
-              workingDirectory: infra/terraform/main
+              workingDirectory: $(workingDirectory)
               allowTelemetryCollection: true
 
           - task: TerraformCLI@2
+            displayName: 'Terraform Validate - $(module) ($(environment))'
             inputs:
               command: 'validate'
               backendType: 'azurerm'
               backendServiceArm: 'tfARM'
-              workingDirectory: infra/terraform/main
+              workingDirectory: $(workingDirectory)
               allowTelemetryCollection: true
 
       - job: PublishArtifacts
