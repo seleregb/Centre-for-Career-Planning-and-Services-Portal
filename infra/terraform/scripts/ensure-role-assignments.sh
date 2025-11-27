@@ -148,7 +148,7 @@ fi
 
 # Determine scope
 if [[ "$SCOPE_TYPE" == "subscription" ]]; then
-    SCOPE="$SUBSCRIPTION_ID"
+    SCOPE="/subscriptions/$(echo "$SUBSCRIPTION_ID" | sed 's|/subscriptions/||')"
     SCOPE_DESC="subscription"
 else
     SCOPE="/subscriptions/$(echo "$SUBSCRIPTION_ID" | sed 's|/subscriptions/||')/resourceGroups/${RESOURCE_GROUP_NAME}"
