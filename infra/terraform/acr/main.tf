@@ -33,25 +33,6 @@ data "azurerm_resource_group" "acr" {
   name = var.resource_group_name
 }
 
-# General-purpose v2 Storage Account
-resource "azurerm_storage_account" "main" {
-  name                            = "${substr(replace(var.app_name, "-", ""), 0, 18)}st${var.environment}"
-  resource_group_name             = data.azurerm_resource_group.acr.name
-  location                        = data.azurerm_resource_group.acr.location
-  account_tier                    = var.storage_account_tier
-  account_replication_type        = var.storage_account_replication_type
-  account_kind                    = var.storage_account_kind
-  min_tls_version                 = "TLS1_2"
-  allow_nested_items_to_be_public = false
-  https_traffic_only_enabled      = true
-  shared_access_key_enabled       = var.storage_shared_access_key_enabled
-
-  tags = {
-    Environment = var.environment
-    Application = var.app_name
-  }
-}
-
 # Azure Container Registry
 resource "azurerm_container_registry" "main" {
   name                = "${replace(var.app_name, "-", "")}acr${var.environment}"
