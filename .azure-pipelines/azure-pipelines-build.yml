@@ -10,9 +10,11 @@ trigger:
       - '.azure-pipelines/azure-pipelines-build.yml'
 
 variables:
-  imageRepositoryFrontend: ccps-portal/frontend
-  imageRepositoryBackend: ccps-portal/backend
-  dockerRegistryServiceConnection: 'DockerDevOps' # change to your service connection name
+- group: 'infrastructure-common'
+- name: imageRepositoryFrontend
+  value: ccps-portal/frontend
+- name: imageRepositoryBackend
+  value: ccps-portal/backend
 
 stages:
   - stage: Build
@@ -27,7 +29,7 @@ stages:
               command: buildAndPush
               repository: $(imageRepositoryFrontend)
               dockerfile: frontend/Dockerfile
-              containerRegistry: $(dockerRegistryServiceConnection)
+              containerRegistry: $(dockerDeploymentSvc)
               tags: |
                 $(Build.BuildId)
                 $(Build.SourceBranchName)
@@ -38,7 +40,7 @@ stages:
               command: buildAndPush
               repository: $(imageRepositoryBackend)
               dockerfile: backend/Dockerfile
-              containerRegistry: $(dockerRegistryServiceConnection)
+              containerRegistry: $(dockerDeploymentSvc)
               tags: |
                 $(Build.BuildId)
                 $(Build.SourceBranchName)
