@@ -30,7 +30,7 @@ data "azurerm_client_config" "current" {}
 
 # Resource Group
 data "azurerm_resource_group" "acr" {
-  name     = var.resource_group_name
+  name = var.resource_group_name
 }
 
 # General-purpose v2 Storage Account
