@@ -179,22 +179,32 @@ for ROLE in "${ROLE_ARRAY[@]}"; do
         --assignee "$PRINCIPAL_OBJECT_ID" \
         --role "$ROLE" \
         --query "length(@)" \
-        -o tsv 2>/dev/null || echo "0")
+        -o tsv 2>/dev/null) || EXISTING_COUNT="0"
+    
+    # Ensure EXISTING_COUNT is a valid number
+    if [[ ! "$EXISTING_COUNT" =~ ^[0-9]+$ ]]; then
+        EXISTING_COUNT="0"
+    fi
     
     if [[ "$EXISTING_COUNT" -gt 0 ]]; then
         echo -e "${YELLOW}  ✓ Role assignment already exists, skipping${NC}"
         ((SKIPPED++))
     else
         echo -e "${BLUE}  → Creating role assignment...${NC}"
-        if az role assignment create \
+        # Capture both stdout and stderr to show errors if creation fails
+        if CREATE_OUTPUT=$(az role assignment create \
             --scope "$SCOPE" \
             --assignee "$PRINCIPAL_OBJECT_ID" \
             --role "$ROLE" \
-            --output none 2>/dev/null; then
+            --output none 2>&1); then
             echo -e "${GREEN}  ✓ Role assignment created successfully${NC}"
             ((CREATED++))
         else
             echo -e "${RED}  ✗ Failed to create role assignment${NC}" >&2
+            # Show the actual error message
+            if [[ -n "$CREATE_OUTPUT" ]]; then
+                echo -e "${RED}    Error: ${CREATE_OUTPUT}${NC}" >&2
+            fi
             ((FAILED++))
         fi
     fi
