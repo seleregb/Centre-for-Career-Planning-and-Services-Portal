@@ -24,9 +24,9 @@ stages:
           vmImage: ubuntu-latest
         steps:
           - task: Docker@2
-            displayName: Build and push frontend (dev)
+            displayName: Build frontend (dev)
             inputs:
-              command: buildAndPush
+              command: build
               repository: $(imageRepositoryFrontend)
               dockerfile: frontend/Dockerfile
               containerRegistry: $(dockerDeploymentDevSvc)
@@ -37,9 +37,19 @@ stages:
                 dev-$(Build.BuildId)
                 dev-$(Build.SourceBranchName)
           - task: Docker@2
-            displayName: Build and push backend (dev)
+            displayName: Push frontend (dev)
             inputs:
-              command: buildAndPush
+              command: push
+              repository: $(imageRepositoryFrontend)
+              containerRegistry: $(dockerDeploymentDevSvc)
+              tags: |
+                latest
+                dev-$(Build.BuildId)
+                dev-$(Build.SourceBranchName)
+          - task: Docker@2
+            displayName: Build backend (dev)
+            inputs:
+              command: build
               repository: $(imageRepositoryBackend)
               dockerfile: backend/Dockerfile
               containerRegistry: $(dockerDeploymentDevSvc)
@@ -47,10 +57,20 @@ stages:
                 dev-$(Build.BuildId)
                 dev-$(Build.SourceBranchName)
                 latest
+          - task: Docker@2
+            displayName: Push backend (dev)
+            inputs:
+              command: push
+              repository: $(imageRepositoryBackend)
+              containerRegistry: $(dockerDeploymentDevSvc)
+              tags: |
+                dev-$(Build.BuildId)
+                dev-$(Build.SourceBranchName)
+                latest
           # - task: Docker@2
-          #   displayName: Build and push frontend (stage)
+          #   displayName: Build frontend (stage)
           #   inputs:
-          #     command: buildAndPush
+          #     command: build
           #     repository: $(imageRepositoryFrontend)
           #     dockerfile: frontend/Dockerfile
           #     containerRegistry: $(dockerDeploymentStageSvc)
@@ -61,9 +81,19 @@ stages:
           #       stage-$(Build.BuildId)
           #       stage-$(Build.SourceBranchName)
           # - task: Docker@2
-          #   displayName: Build and push backend (stage)
+          #   displayName: Push frontend (stage)
           #   inputs:
-          #     command: buildAndPush
+          #     command: push
+          #     repository: $(imageRepositoryFrontend)
+          #     containerRegistry: $(dockerDeploymentStageSvc)
+          #     tags: |
+          #       latest
+          #       stage-$(Build.BuildId)
+          #       stage-$(Build.SourceBranchName)
+          # - task: Docker@2
+          #   displayName: Build backend (stage)
+          #   inputs:
+          #     command: build
           #     repository: $(imageRepositoryBackend)
           #     dockerfile: backend/Dockerfile
           #     containerRegistry: $(dockerDeploymentStageSvc)
@@ -72,9 +102,19 @@ stages:
           #       stage-$(Build.BuildId)
           #       stage-$(Build.SourceBranchName)
           # - task: Docker@2
-          #   displayName: Build and push frontend (prod)
+          #   displayName: Push backend (stage)
           #   inputs:
-          #     command: buildAndPush
+          #     command: push
+          #     repository: $(imageRepositoryBackend)
+          #     containerRegistry: $(dockerDeploymentStageSvc)
+          #     tags: |
+          #       latest
+          #       stage-$(Build.BuildId)
+          #       stage-$(Build.SourceBranchName)
+          # - task: Docker@2
+          #   displayName: Build frontend (prod)
+          #   inputs:
+          #     command: build
           #     repository: $(imageRepositoryFrontend)
           #     dockerfile: frontend/Dockerfile
           #     containerRegistry: $(dockerDeploymentProdSvc)
@@ -85,11 +125,31 @@ stages:
           #       prod-$(Build.BuildId)
           #       prod-$(Build.SourceBranchName)
           # - task: Docker@2
-          #   displayName: Build and push backend (prod)
+          #   displayName: Push frontend (prod)
           #   inputs:
-          #     command: buildAndPush
+          #     command: push
+          #     repository: $(imageRepositoryFrontend)
+          #     containerRegistry: $(dockerDeploymentProdSvc)
+          #     tags: |
+          #       latest
+          #       prod-$(Build.BuildId)
+          #       prod-$(Build.SourceBranchName)
+          # - task: Docker@2
+          #   displayName: Build backend (prod)
+          #   inputs:
+          #     command: build
           #     repository: $(imageRepositoryBackend)
           #     dockerfile: backend/Dockerfile
+          #     containerRegistry: $(dockerDeploymentProdSvc)
+          #     tags: |
+          #       latest
+          #       prod-$(Build.BuildId)
+          #       prod-$(Build.SourceBranchName)
+          # - task: Docker@2
+          #   displayName: Push backend (prod)
+          #   inputs:
+          #     command: push
+          #     repository: $(imageRepositoryBackend)
           #     containerRegistry: $(dockerDeploymentProdSvc)
           #     tags: |
           #       latest

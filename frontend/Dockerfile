@@ -6,6 +6,9 @@ WORKDIR /app
 ARG VITE_BACKEND_URL
 ENV VITE_BACKEND_URL=${VITE_BACKEND_URL}
 
+# TEMP: verify value during build
+RUN echo "BUILD-TIME VITE_BACKEND_URL=$VITE_BACKEND_URL"
+
 # Copy package files
 COPY package*.json ./
 
