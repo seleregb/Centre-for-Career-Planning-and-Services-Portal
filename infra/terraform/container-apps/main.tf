@@ -92,7 +92,7 @@ locals {
   # This breaks the circular dependency by not directly referencing frontend resource
   # Azure Container Apps FQDN pattern: <app-name>.<default-domain>
   frontend_fqdn = "${var.app_name}-frontend-${var.environment}.${replace(azurerm_container_app_environment.main.default_domain, "*.", "")}"
-  
+
   # Construct backend URL using environment's default domain pattern
   backend_fqdn = "${var.app_name}-backend-${var.environment}.${replace(azurerm_container_app_environment.main.default_domain, "*.", "")}"
 }
@@ -130,13 +130,15 @@ resource "azurerm_container_app" "backend" {
   }
 
   secret {
-    name  = "mongodb-uri"
-    value = data.azurerm_key_vault_secret.mongodb_atlas_connection_string.value
+    name                = "mongodb-uri"
+    key_vault_secret_id = data.azurerm_key_vault_secret.mongodb_atlas_connection_string.id
+    identity            = azurerm_container_app.backend.identity[0].principal_id
   }
 
   secret {
-    name  = "jwt-secret"
-    value = data.azurerm_key_vault_secret.jwt_secret.value
+    name                = "jwt-secret"
+    key_vault_secret_id = data.azurerm_key_vault_secret.jwt_secret.id
+    identity            = azurerm_container_app.backend.identity[0].principal_id
   }
 
   template {

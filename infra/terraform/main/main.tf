@@ -30,6 +30,10 @@ provider "azurerm" {
     resource_group {
       prevent_deletion_if_contains_resources = var.prevent_resource_group_deletion
     }
+    key_vault {
+      recover_soft_deleted_secrets          = true
+      purge_soft_deleted_secrets_on_destroy = true
+    }
   }
 }
 
