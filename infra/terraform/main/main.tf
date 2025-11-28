@@ -245,7 +245,10 @@ resource "azurerm_postgresql_flexible_server" "main" {
     Application = var.app_name
   }
 
-  depends_on = [azurerm_private_dns_zone_virtual_network_link.postgresql]
+  depends_on = [
+    azurerm_subnet.postgresql,
+    azurerm_private_dns_zone_virtual_network_link.postgresql
+  ]
 }
 
 # Private DNS Zone for PostgreSQL
@@ -324,7 +327,10 @@ resource "azurerm_mysql_flexible_server" "main" {
     Application = var.app_name
   }
 
-  depends_on = [azurerm_private_dns_zone_virtual_network_link.mysql]
+  depends_on = [
+    azurerm_subnet.mysql,
+    azurerm_private_dns_zone_virtual_network_link.mysql
+  ]
 }
 
 # Private DNS Zone for MySQL
