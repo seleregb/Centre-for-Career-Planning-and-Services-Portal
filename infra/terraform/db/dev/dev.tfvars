@@ -26,5 +26,5 @@ mysql_storage_auto_grow_enabled = true
 mysql_storage_iops          = 360
 mysql_sku_name              = "B_Standard_B1ms"  # Burstable tier for serverless scaling
 mysql_backup_retention_days = 7
-mysql_location              = "eastus"
+mysql_location              = "westus2"
 

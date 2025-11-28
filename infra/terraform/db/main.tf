@@ -49,6 +49,16 @@ data "azuread_service_principal" "current_sp" {
   display_name = "tfAzureDevOps"
 }
 
+# Ensure Microsoft.DBforMySQL and Microsoft.DBforPostgreSQL providers are registered
+resource "null_resource" "register_microsoft_app" {
+  provisioner "local-exec" {
+    command = "az provider register --namespace Microsoft.DBforMySQL"
+  }
+  provisioner "local-exec" {
+    command = "az provider register --namespace Microsoft.DBforPostgreSQL"
+  }
+}
+
 # Virtual Network for MySQL Database (eastus)
 resource "azurerm_virtual_network" "mysql" {
   count               = var.mysql_server_name != "" ? 1 : 0
@@ -128,7 +138,6 @@ resource "azurerm_mysql_flexible_server" "main" {
   version                      = var.mysql_version
   delegated_subnet_id          = azurerm_subnet.mysql[0].id
   private_dns_zone_id          = azurerm_private_dns_zone.mysql[0].id
-  zone                         = "1"
   backup_retention_days        = var.mysql_backup_retention_days
   geo_redundant_backup_enabled = false
 
@@ -156,7 +165,8 @@ resource "azurerm_mysql_flexible_server" "main" {
 
   depends_on = [
     azurerm_subnet.mysql,
-    azurerm_private_dns_zone_virtual_network_link.mysql
+    azurerm_private_dns_zone_virtual_network_link.mysql,
+    null_resource.register_microsoft_app
   ]
 }
 
@@ -235,7 +245,8 @@ resource "azurerm_postgresql_flexible_server" "main" {
 
   depends_on = [
     azurerm_subnet.postgresql,
-    azurerm_private_dns_zone_virtual_network_link.postgresql
+    azurerm_private_dns_zone_virtual_network_link.postgresql,
+    null_resource.register_microsoft_app
   ]
 }
 
@@ -277,23 +288,6 @@ resource "azurerm_postgresql_flexible_server_database" "main" {
   depends_on = [azurerm_postgresql_flexible_server.main]
 }
 
-# Key Vault Access Policy for current service principal (tfAzureDevOps)
-# Grants permissions to store connection strings
-resource "azurerm_key_vault_access_policy" "current_user" {
-  key_vault_id = data.azurerm_key_vault.main.id
-  tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = data.azuread_service_principal.current_sp.object_id
-
-  secret_permissions = [
-    "Get",
-    "List",
-    "Set",
-    "Delete",
-    "Recover",
-    "Backup",
-    "Restore"
-  ]
-}
 
 # Key Vault Secret for PostgreSQL Connection String
 resource "azurerm_key_vault_secret" "postgresql_connection_string" {
@@ -303,7 +297,6 @@ resource "azurerm_key_vault_secret" "postgresql_connection_string" {
   key_vault_id = data.azurerm_key_vault.main.id
 
   depends_on = [
-    azurerm_key_vault_access_policy.current_user,
     azurerm_postgresql_flexible_server_database.main
   ]
 
@@ -321,7 +314,6 @@ resource "azurerm_key_vault_secret" "mysql_connection_string" {
   key_vault_id = data.azurerm_key_vault.main.id
 
   depends_on = [
-    azurerm_key_vault_access_policy.current_user,
     azurerm_mysql_flexible_database.main
   ]
 

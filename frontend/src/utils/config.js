@@ -26,9 +26,11 @@ function loadConfig() {
       
       if (response.ok) {
         const config = await response.json();
-        backendUrl = config.BACKEND_URL || config.backendUrl || config.VITE_BACKEND_URL;
-        if (backendUrl) {
-          console.log('✅ Loaded backend URL from config.json:', backendUrl);
+        // Empty string is valid - it means use relative URLs (nginx proxies to backend)
+        const url = config.BACKEND_URL !== undefined ? config.BACKEND_URL : (config.backendUrl !== undefined ? config.backendUrl : config.VITE_BACKEND_URL);
+        if (url !== undefined && url !== null) {
+          backendUrl = url === '' ? '' : url;
+          console.log('✅ Loaded backend URL from config.json:', backendUrl || '(empty - using relative URLs)');
           return backendUrl;
         }
       }
@@ -37,15 +39,22 @@ function loadConfig() {
     }
 
     // Fallback to build-time env var (for development)
-    if (import.meta.env.VITE_BACKEND_URL) {
-      backendUrl = import.meta.env.VITE_BACKEND_URL;
-      console.log('📦 Using build-time VITE_BACKEND_URL:', backendUrl);
+    if (import.meta.env.VITE_BACKEND_URL !== undefined) {
+      backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+      console.log('📦 Using build-time VITE_BACKEND_URL:', backendUrl || '(empty - using relative URLs)');
       return backendUrl;
     }
 
-    // Final fallback for local development
-    backendUrl = 'http://localhost:5500';
-    console.warn('⚠️ Using default backend URL:', backendUrl);
+    // Final fallback for local development (only if not in production)
+    // In production (container app), empty string means nginx proxies to backend
+    // In local dev, default to localhost:5500
+    if (import.meta.env.MODE === 'development') {
+      backendUrl = 'http://localhost:5500';
+      console.warn('⚠️ Using default backend URL for local development:', backendUrl);
+    } else {
+      backendUrl = '';
+      console.log('✅ Using relative URLs (nginx will proxy to backend)');
+    }
     return backendUrl;
   })();
 
@@ -58,7 +67,8 @@ function loadConfig() {
  * For most use cases, call this and it will return the URL (may be async on first call)
  */
 export function getBackendUrl() {
-  if (backendUrl) {
+  // Check if backendUrl has been set (including empty string for relative URLs)
+  if (backendUrl !== null && backendUrl !== undefined) {
     return backendUrl;
   }
   
@@ -68,7 +78,11 @@ export function getBackendUrl() {
   }
   
   // Return fallback while loading
-  return import.meta.env.VITE_BACKEND_URL || 'http://localhost:5500';
+  // Use relative URLs in production (empty string), localhost in dev
+  if (import.meta.env.MODE === 'development') {
+    return import.meta.env.VITE_BACKEND_URL || 'http://localhost:5500';
+  }
+  return import.meta.env.VITE_BACKEND_URL || '';
 }
 
 /**
@@ -76,7 +90,14 @@ export function getBackendUrl() {
  * Use this for immediate access (will use fallback if config not loaded yet)
  */
 export function getBackendUrlSync() {
-  return backendUrl || import.meta.env.VITE_BACKEND_URL || 'http://localhost:5500';
+  if (backendUrl !== null && backendUrl !== undefined) {
+    return backendUrl;
+  }
+  // Use relative URLs in production (empty string), localhost in dev
+  if (import.meta.env.MODE === 'development') {
+    return import.meta.env.VITE_BACKEND_URL || 'http://localhost:5500';
+  }
+  return import.meta.env.VITE_BACKEND_URL || '';
 }
 
 /**

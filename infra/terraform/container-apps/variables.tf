@@ -23,19 +23,20 @@ variable "container_app_revision_mode" {
   default     = "Single"
 }
 
-# Backend Container App Configuration
-variable "backend_min_replicas" {
-  description = "Minimum number of replicas for backend Container App"
+# Single Container App Configuration (contains both frontend and backend)
+variable "min_replicas" {
+  description = "Minimum number of replicas for the container app (applies to both containers)"
   type        = number
   default     = 1
 }
 
-variable "backend_max_replicas" {
-  description = "Maximum number of replicas for backend Container App"
+variable "max_replicas" {
+  description = "Maximum number of replicas for the container app (applies to both containers)"
   type        = number
   default     = 10
 }
 
+# Backend Container Configuration
 variable "backend_cpu" {
   description = "CPU allocation for backend container (e.g., 0.25, 0.5, 1.0, 2.0)"
   type        = number
@@ -48,19 +49,7 @@ variable "backend_memory" {
   default     = "1.0Gi"
 }
 
-# Frontend Container App Configuration
-variable "frontend_min_replicas" {
-  description = "Minimum number of replicas for frontend Container App"
-  type        = number
-  default     = 1
-}
-
-variable "frontend_max_replicas" {
-  description = "Maximum number of replicas for frontend Container App"
-  type        = number
-  default     = 10
-}
-
+# Frontend Container Configuration
 variable "frontend_cpu" {
   description = "CPU allocation for frontend container (e.g., 0.25, 0.5, 1.0, 2.0)"
   type        = number
@@ -85,6 +74,31 @@ variable "jwt_secret" {
   description = "JWT secret for authentication"
   type        = string
   sensitive   = true
+  default     = ""
+}
+
+# Database VNet Configuration (optional - for connecting to databases in private VNets)
+variable "mysql_vnet_name" {
+  description = "Name of the MySQL database VNet (for VNet peering). Leave empty if not using MySQL."
+  type        = string
+  default     = ""
+}
+
+variable "postgresql_vnet_name" {
+  description = "Name of the PostgreSQL database VNet (for VNet peering). Leave empty if not using PostgreSQL."
+  type        = string
+  default     = ""
+}
+
+variable "mysql_private_dns_zone_name" {
+  description = "Name of the MySQL private DNS zone (for DNS resolution). Leave empty if not using MySQL."
+  type        = string
+  default     = ""
+}
+
+variable "postgresql_private_dns_zone_name" {
+  description = "Name of the PostgreSQL private DNS zone (for DNS resolution). Leave empty if not using PostgreSQL."
+  type        = string
   default     = ""
 }
 

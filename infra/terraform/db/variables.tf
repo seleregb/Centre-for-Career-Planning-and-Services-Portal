@@ -133,7 +133,7 @@ variable "mysql_storage_iops" {
 variable "mysql_sku_name" {
   description = "SKU name for MySQL serverless (Burstable tier for cost-effective scaling). Example: Standard_B1ms (1 vCore, 2GB RAM)"
   type        = string
-  default     = "GP_Standard_D2_v3"
+  default     = "B_Standard_B1ms"
 }
 
 variable "mysql_backup_retention_days" {

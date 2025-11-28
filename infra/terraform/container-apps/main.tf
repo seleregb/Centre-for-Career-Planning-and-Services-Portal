@@ -71,30 +71,174 @@ resource "null_resource" "register_microsoft_app" {
   }
 }
 
+# Virtual Network for Container Apps
+resource "azurerm_virtual_network" "container_apps" {
+  name                = "${var.app_name}-container-apps-vnet-${var.environment}"
+  location            = data.azurerm_resource_group.main.location
+  resource_group_name = data.azurerm_resource_group.main.name
+  address_space       = ["10.2.0.0/16"]
+
+  tags = {
+    Environment = var.environment
+    Application = var.app_name
+  }
+}
+
+# Subnet for Container Apps Environment (dedicated subnet for VNet integration)
+resource "azurerm_subnet" "container_apps" {
+  name                 = "${var.app_name}-container-apps-subnet-${var.environment}"
+  resource_group_name  = data.azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.container_apps.name
+  address_prefixes     = ["10.2.0.0/23"]
+
+  delegation {
+    name = "delegation-container-apps"
+    service_delegation {
+      name = "Microsoft.App/environments"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+      ]
+    }
+  }
+}
+
+# Reference MySQL VNet (if it exists)
+data "azurerm_virtual_network" "mysql" {
+  count               = var.mysql_vnet_name != "" ? 1 : 0
+  name                = var.mysql_vnet_name
+  resource_group_name = var.resource_group_name
+}
+
+# Reference PostgreSQL VNet (if it exists)
+data "azurerm_virtual_network" "postgresql" {
+  count               = var.postgresql_vnet_name != "" ? 1 : 0
+  name                = var.postgresql_vnet_name
+  resource_group_name = var.resource_group_name
+}
+
+# VNet Peering: Container Apps -> MySQL VNet
+resource "azurerm_virtual_network_peering" "container_apps_to_mysql" {
+  count                        = var.mysql_vnet_name != "" ? 1 : 0
+  name                         = "${var.app_name}-container-apps-to-mysql-${var.environment}"
+  resource_group_name          = data.azurerm_resource_group.main.name
+  virtual_network_name         = azurerm_virtual_network.container_apps.name
+  remote_virtual_network_id    = data.azurerm_virtual_network.mysql[0].id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+}
+
+# VNet Peering: MySQL VNet -> Container Apps
+resource "azurerm_virtual_network_peering" "mysql_to_container_apps" {
+  count                        = var.mysql_vnet_name != "" ? 1 : 0
+  name                         = "${var.app_name}-mysql-to-container-apps-${var.environment}"
+  resource_group_name          = data.azurerm_resource_group.main.name
+  virtual_network_name         = data.azurerm_virtual_network.mysql[0].name
+  remote_virtual_network_id    = azurerm_virtual_network.container_apps.id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+}
+
+# VNet Peering: Container Apps -> PostgreSQL VNet
+resource "azurerm_virtual_network_peering" "container_apps_to_postgresql" {
+  count                        = var.postgresql_vnet_name != "" ? 1 : 0
+  name                         = "${var.app_name}-container-apps-to-postgresql-${var.environment}"
+  resource_group_name          = data.azurerm_resource_group.main.name
+  virtual_network_name         = azurerm_virtual_network.container_apps.name
+  remote_virtual_network_id    = data.azurerm_virtual_network.postgresql[0].id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+}
+
+# VNet Peering: PostgreSQL VNet -> Container Apps
+resource "azurerm_virtual_network_peering" "postgresql_to_container_apps" {
+  count                        = var.postgresql_vnet_name != "" ? 1 : 0
+  name                         = "${var.app_name}-postgresql-to-container-apps-${var.environment}"
+  resource_group_name          = data.azurerm_resource_group.main.name
+  virtual_network_name         = data.azurerm_virtual_network.postgresql[0].name
+  remote_virtual_network_id    = azurerm_virtual_network.container_apps.id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+}
+
+# Reference MySQL Private DNS Zone (if it exists)
+data "azurerm_private_dns_zone" "mysql" {
+  count               = var.mysql_private_dns_zone_name != "" ? 1 : 0
+  name                = var.mysql_private_dns_zone_name
+  resource_group_name = var.resource_group_name
+}
+
+# Reference PostgreSQL Private DNS Zone (if it exists)
+data "azurerm_private_dns_zone" "postgresql" {
+  count               = var.postgresql_private_dns_zone_name != "" ? 1 : 0
+  name                = var.postgresql_private_dns_zone_name
+  resource_group_name = var.resource_group_name
+}
+
+# Link MySQL Private DNS Zone to Container Apps VNet
+resource "azurerm_private_dns_zone_virtual_network_link" "mysql_container_apps" {
+  count                 = var.mysql_private_dns_zone_name != "" ? 1 : 0
+  name                  = "${var.app_name}-mysql-dns-link-container-apps-${var.environment}"
+  resource_group_name   = var.resource_group_name
+  private_dns_zone_name = data.azurerm_private_dns_zone.mysql[0].name
+  virtual_network_id    = azurerm_virtual_network.container_apps.id
+  registration_enabled  = false
+
+  tags = {
+    Environment = var.environment
+    Application = var.app_name
+  }
+}
+
+# Link PostgreSQL Private DNS Zone to Container Apps VNet
+resource "azurerm_private_dns_zone_virtual_network_link" "postgresql_container_apps" {
+  count                 = var.postgresql_private_dns_zone_name != "" ? 1 : 0
+  name                  = "${var.app_name}-postgresql-dns-link-container-apps-${var.environment}"
+  resource_group_name   = var.resource_group_name
+  private_dns_zone_name = data.azurerm_private_dns_zone.postgresql[0].name
+  virtual_network_id    = azurerm_virtual_network.container_apps.id
+  registration_enabled  = false
+
+  tags = {
+    Environment = var.environment
+    Application = var.app_name
+  }
+}
+
 # Container Apps Environment (shared environment for both apps)
+# Note: VNet integration can be added later if needed via infrastructure_subnet_id
+# For now, using basic setup to avoid subnet delegation conflicts
 resource "azurerm_container_app_environment" "main" {
   name                       = "${var.app_name}-env-${var.environment}"
   location                   = data.azurerm_resource_group.main.location
   resource_group_name        = data.azurerm_resource_group.main.name
   log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
+  # infrastructure_subnet_id removed to avoid "SubnetIsDelegated" error
+  # The subnet delegation to Microsoft.App/environments conflicts with AgentPoolProfile usage
+  # If VNet integration is required, configure it separately or use a different subnet
 
   tags = {
     Environment = var.environment
     Application = var.app_name
   }
 
-  depends_on = [null_resource.register_microsoft_app]
+  depends_on = [
+    null_resource.register_microsoft_app
+  ]
 }
 
-# Local values to construct URLs and break circular dependency
+# Local values for container app URL construction
 locals {
   # Construct frontend URL using environment's default domain pattern
-  # This breaks the circular dependency by not directly referencing frontend resource
   # Azure Container Apps FQDN pattern: <app-name>.<default-domain>
-  frontend_fqdn = "${var.app_name}-frontend-${var.environment}.${replace(azurerm_container_app_environment.main.default_domain, "*.", "")}"
-
-  # Construct backend URL using environment's default domain pattern
-  backend_fqdn = "${var.app_name}-backend-${var.environment}.${replace(azurerm_container_app_environment.main.default_domain, "*.", "")}"
+  app_fqdn = "${var.app_name}-${var.environment}.${replace(azurerm_container_app_environment.main.default_domain, "*.", "")}"
 }
 
 data "azurerm_key_vault_secret" "mongodb" {
@@ -107,29 +251,43 @@ data "azurerm_key_vault_secret" "jwt" {
   key_vault_id = data.azurerm_key_vault.main.id
 }
 
-# Create a user-assigned managed identity for the backend container app
-resource "azurerm_user_assigned_identity" "backend" {
-  name                = "${var.app_name}-backend-identity-${var.environment}"
+# Reference PostgreSQL connection string from Key Vault (if it exists)
+# data "azurerm_key_vault_secret" "postgresql_connection_string" {
+#   count        = var.postgresql_private_dns_zone_name != "" ? 1 : 0
+#   name         = "postgresql-connection-string"
+#   key_vault_id = data.azurerm_key_vault.main.id
+# }
+
+# Reference MySQL connection string from Key Vault (if it exists)
+# data "azurerm_key_vault_secret" "mysql_connection_string" {
+#   count        = var.mysql_private_dns_zone_name != "" ? 1 : 0
+#   name         = "mysql-connection-string"
+#   key_vault_id = data.azurerm_key_vault.main.id
+# }
+
+# Create a user-assigned managed identity for the container app (for backend secrets)
+resource "azurerm_user_assigned_identity" "app" {
+  name                = "${var.app_name}-identity-${var.environment}"
   location            = data.azurerm_resource_group.main.location
   resource_group_name = data.azurerm_resource_group.main.name
 }
 
-# Grant backend container app's SystemAssigned identity access to Key Vault using RBAC
-resource "azurerm_role_assignment" "backend_keyvault_secrets_user" {
+# Grant container app's identity access to Key Vault using RBAC
+resource "azurerm_role_assignment" "app_keyvault_secrets_user" {
   scope                = data.azurerm_key_vault.main.id
   role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_user_assigned_identity.backend.principal_id
+  principal_id         = azurerm_user_assigned_identity.app.principal_id
 
   depends_on = [
-    azurerm_user_assigned_identity.backend
+    azurerm_user_assigned_identity.app
   ]
 }
 
-# Grant backend container app access to Key Vault
-resource "azurerm_key_vault_access_policy" "backend" {
+# Grant container app access to Key Vault
+resource "azurerm_key_vault_access_policy" "app" {
   key_vault_id = data.azurerm_key_vault.main.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = azurerm_user_assigned_identity.backend.principal_id
+  object_id    = azurerm_user_assigned_identity.app.principal_id
 
   secret_permissions = [
     "Get",
@@ -137,16 +295,17 @@ resource "azurerm_key_vault_access_policy" "backend" {
   ]
 }
 
-# Container App for Backend
-resource "azurerm_container_app" "backend" {
-  name                         = "${var.app_name}-backend-${var.environment}"
+# Single Container App with both Frontend and Backend containers
+# Similar to docker-compose, both containers run in the same app and can communicate via localhost
+resource "azurerm_container_app" "main" {
+  name                         = "${var.app_name}-${var.environment}"
   container_app_environment_id = azurerm_container_app_environment.main.id
   resource_group_name          = data.azurerm_resource_group.main.name
   revision_mode                = var.container_app_revision_mode
 
   identity {
-    type = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.backend.id]
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.app.id]
   }
 
   registry {
@@ -163,19 +322,41 @@ resource "azurerm_container_app" "backend" {
   secret {
     name                = "mongodb-uri"
     key_vault_secret_id = data.azurerm_key_vault_secret.mongodb.id
-    identity            = azurerm_user_assigned_identity.backend.id
+    identity            = azurerm_user_assigned_identity.app.id
   }
 
   secret {
     name                = "jwt-secret"
     key_vault_secret_id = data.azurerm_key_vault_secret.jwt.id
-    identity            = azurerm_user_assigned_identity.backend.id
+    identity            = azurerm_user_assigned_identity.app.id
   }
 
-  template {
-    min_replicas = var.backend_min_replicas
-    max_replicas = var.backend_max_replicas
+  # # PostgreSQL connection string secret (if PostgreSQL is configured)
+  # dynamic "secret" {
+  #   for_each = var.postgresql_private_dns_zone_name != "" ? [1] : []
+  #   content {
+  #     name                = "postgresql-connection-string"
+  #     key_vault_secret_id = data.azurerm_key_vault_secret.postgresql_connection_string[0].id
+  #     identity            = azurerm_user_assigned_identity.app.id
+  #   }
+  # }
 
+  # # MySQL connection string secret (if MySQL is configured)
+  # dynamic "secret" {
+  #   for_each = var.mysql_private_dns_zone_name != "" ? [1] : []
+  #   content {
+  #     name                = "mysql-connection-string"
+  #     key_vault_secret_id = data.azurerm_key_vault_secret.mysql_connection_string[0].id
+  #     identity            = azurerm_user_assigned_identity.app.id
+  #   }
+  # }
+
+  template {
+    # Combined replicas for both containers
+    min_replicas = var.min_replicas
+    max_replicas = var.max_replicas
+
+    # Backend Container
     container {
       name   = "backend"
       image  = "${data.azurerm_container_registry.main.login_server}/${var.app_name}/backend:latest"
@@ -192,10 +373,10 @@ resource "azurerm_container_app" "backend" {
         value = "5500"
       }
 
-      # FRONTEND_URL for CORS - using constructed URL to break circular dependency
+      # FRONTEND_URL for CORS - using the app's FQDN since frontend is exposed externally
       env {
         name  = "FRONTEND_URL"
-        value = "https://${local.frontend_fqdn}"
+        value = "https://${local.app_fqdn}"
       }
 
       env {
@@ -208,6 +389,24 @@ resource "azurerm_container_app" "backend" {
         secret_name = "jwt-secret"
       }
 
+      # PostgreSQL connection string environment variable (if PostgreSQL is configured)
+      # dynamic "env" {
+      #   for_each = var.postgresql_private_dns_zone_name != "" ? [1] : []
+      #   content {
+      #     name        = "POSTGRESQL_CONNECTION_STRING"
+      #     secret_name = "postgresql-connection-string"
+      #   }
+      # }
+
+      # MySQL connection string environment variable (if MySQL is configured)
+      # dynamic "env" {
+      #   for_each = var.mysql_private_dns_zone_name != "" ? [1] : []
+      #   content {
+      #     name        = "MYSQL_CONNECTION_STRING"
+      #     secret_name = "mysql-connection-string"
+      #   }
+      # }
+
       liveness_probe {
         transport        = "HTTP"
         path             = "/api/health"
@@ -222,66 +421,17 @@ resource "azurerm_container_app" "backend" {
         interval_seconds = 10
       }
     }
-  }
 
-  ingress {
-    external_enabled           = true
-    target_port                = 5500
-    transport                  = "http"
-    allow_insecure_connections = false
-
-    traffic_weight {
-      percentage      = 100
-      latest_revision = true
-    }
-  }
-
-  tags = {
-    Environment = var.environment
-    Application = var.app_name
-    Component   = "backend"
-  }
-}
-
-# Container App for Frontend
-resource "azurerm_container_app" "frontend" {
-  name                         = "${var.app_name}-frontend-${var.environment}"
-  container_app_environment_id = azurerm_container_app_environment.main.id
-  resource_group_name          = data.azurerm_resource_group.main.name
-  revision_mode                = var.container_app_revision_mode
-
-  identity {
-    type = "SystemAssigned"
-  }
-
-  registry {
-    server               = data.azurerm_container_registry.main.login_server
-    username             = data.azurerm_container_registry.main.admin_username
-    password_secret_name = "registry-password"
-  }
-
-  secret {
-    name  = "registry-password"
-    value = data.azurerm_container_registry.main.admin_password
-  }
-
-  template {
-    min_replicas = var.frontend_min_replicas
-    max_replicas = var.frontend_max_replicas
-
+    # Frontend Container
     container {
       name   = "frontend"
       image  = "${data.azurerm_container_registry.main.login_server}/${var.app_name}/frontend:latest"
       cpu    = var.frontend_cpu
       memory = var.frontend_memory
 
-      # BACKEND_URL is used at container startup to generate config.json
-      # The Dockerfile entrypoint script reads this env var and creates config.json
-      # Using constructed URL to break circular dependency
-      env {
-        name  = "BACKEND_URL"
-        value = "https://${local.backend_fqdn}"
-      }
+      # BACKEND_URL not set - defaults to empty string for relative URLs
+      # Nginx in frontend container proxies /api/* requests to backend container (localhost:5500)
+      # Browser makes requests to same origin (frontend ingress), nginx handles routing to backend
 
       liveness_probe {
         transport        = "HTTP"
@@ -299,6 +449,9 @@ resource "azurerm_container_app" "frontend" {
     }
   }
 
+  # Expose frontend via ingress on port 5173
+  # Backend is not exposed externally - nginx in frontend container proxies /api/* to backend (localhost:5500)
+  # Browser makes requests to same origin (frontend ingress URL), nginx routes to backend internally
   ingress {
     external_enabled           = true
     target_port                = 5173
@@ -314,23 +467,14 @@ resource "azurerm_container_app" "frontend" {
   tags = {
     Environment = var.environment
     Application = var.app_name
-    Component   = "frontend"
+    Component   = "fullstack"
   }
 }
 
-# Grant frontend container app access to Key Vault (if needed in future)
-resource "azurerm_key_vault_access_policy" "frontend" {
-  key_vault_id = data.azurerm_key_vault.main.id
-  tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = azurerm_container_app.frontend.identity[0].principal_id
-
-  secret_permissions = [
-    "Get",
-    "List"
-  ]
-}
-
-# Note: Container Apps have built-in service discovery, so no need for null_resource
-# Apps in the same environment can communicate using their names as hostnames
-# External ingress URLs are automatically available via ingress[0].fqdn
+# Note: Both containers run in the same Container App, similar to docker-compose
+# - Backend runs on port 5500 (not exposed externally)
+# - Frontend runs on port 5173 and is exposed via ingress
+# - Nginx in frontend container proxies /api/* requests to backend (localhost:5500)
+# - Browser makes requests to same origin (frontend ingress), nginx handles routing to backend
+# - This avoids CORS issues and allows backend to remain internal-only
 
