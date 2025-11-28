@@ -75,6 +75,24 @@ stages:
             #   workingDirectory: 'infra/terraform/container-apps'
             #   tfvarsFile: 'infra/terraform/container-apps/prod/prod.tfvars'
             #   backendConfig: 'infra/terraform/container-apps/prod/prod.conf'
+            DB_Dev:
+              module: db
+              environment: dev
+              workingDirectory: 'infra/terraform/db'
+              tfvarsFile: 'infra/terraform/db/dev/dev.tfvars'
+              backendConfig: 'infra/terraform/db/dev/dev.conf'
+            # DB_Stage:
+            #   module: db
+            #   environment: stage
+            #   workingDirectory: 'infra/terraform/db'
+            #   tfvarsFile: 'infra/terraform/db/stage/stage.tfvars'
+            #   backendConfig: 'infra/terraform/db/stage/stage.conf'
+            # DB_Prod:
+            #   module: db
+            #   environment: prod
+            #   workingDirectory: 'infra/terraform/db'
+            #   tfvarsFile: 'infra/terraform/db/prod/prod.tfvars'
+            #   backendConfig: 'infra/terraform/db/prod/prod.conf'
         steps:
 
           - task: TerraformInstaller@0
