@@ -216,7 +216,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
   count                         = var.postgresql_server_name != "" ? 1 : 0
   name                          = var.postgresql_server_name
   resource_group_name           = azurerm_resource_group.main.name
-  location                      = azurerm_resource_group.main.location
+  location                      = var.postgresql_location != null ? var.postgresql_location : azurerm_resource_group.main.location
   version                       = var.postgresql_version
   delegated_subnet_id           = azurerm_subnet.postgresql.id
   private_dns_zone_id           = azurerm_private_dns_zone.postgresql[0].id
@@ -231,12 +231,8 @@ resource "azurerm_postgresql_flexible_server" "main" {
 
   # Burstable SKU for serverless-like cost-effective scaling
   # B_Standard_B1ms provides 1 vCore, 2GB RAM with burstable performance
+  # Note: High availability is not supported for burstable SKUs
   sku_name = var.postgresql_sku_name
-
-  # Serverless configuration - high availability disabled for cost savings
-  high_availability {
-    mode = "SameZone"
-  }
 
   maintenance_window {
     day_of_week  = 0
@@ -296,7 +292,7 @@ resource "azurerm_mysql_flexible_server" "main" {
   count                        = var.mysql_server_name != "" ? 1 : 0
   name                         = var.mysql_server_name
   resource_group_name          = azurerm_resource_group.main.name
-  location                     = azurerm_resource_group.main.location
+  location                     = var.mysql_location != null ? var.mysql_location : azurerm_resource_group.main.location
   administrator_login          = var.mysql_admin_username
   administrator_password       = var.mysql_admin_password
   version                      = var.mysql_version
@@ -314,12 +310,8 @@ resource "azurerm_mysql_flexible_server" "main" {
 
   # Burstable SKU for serverless-like cost-effective scaling
   # Standard_B1ms provides 1 vCore, 2GB RAM with burstable performance
+  # Note: High availability is not supported for burstable SKUs
   sku_name = var.mysql_sku_name
-
-  # Serverless configuration - high availability disabled for cost savings
-  high_availability {
-    mode = "SameZone"
-  }
 
   maintenance_window {
     day_of_week  = 0

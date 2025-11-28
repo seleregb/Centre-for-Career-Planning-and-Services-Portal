@@ -31,6 +31,7 @@ postgresql_database_name    = "ccpsportal"
 postgresql_storage_mb       = 32768  # Minimum 32768 MB (32 GB)
 postgresql_sku_name         = "B_Standard_B1ms"  # Burstable tier for serverless scaling
 postgresql_backup_retention_days = 7
+postgresql_location             = "eastus2" # PostgreSQL Flexible Server is not available in canadacentral
 
 # MySQL Serverless Database Configuration
 # Uncomment and configure to enable MySQL database
@@ -44,4 +45,5 @@ mysql_storage_auto_grow_enabled = true
 mysql_storage_iops          = 360
 mysql_sku_name              = "B_Standard_B1ms"  # Burstable tier for serverless scaling
 mysql_backup_retention_days = 7
+mysql_location              = "eastus2" # MySQL Flexible Server is not available in canadacentral
 
