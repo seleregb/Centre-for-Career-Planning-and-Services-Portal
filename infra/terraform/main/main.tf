@@ -158,3 +158,257 @@ resource "azurerm_key_vault_secret" "jwt_secret" {
     Application = var.app_name
   }
 }
+
+# Virtual Network for Databases
+resource "azurerm_virtual_network" "database" {
+  name                = "${var.app_name}-db-vnet-${var.environment}"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  address_space       = ["10.0.0.0/16"]
+
+  tags = {
+    Environment = var.environment
+    Application = var.app_name
+  }
+}
+
+# Subnet for PostgreSQL
+resource "azurerm_subnet" "postgresql" {
+  name                 = "${var.app_name}-postgresql-subnet-${var.environment}"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.database.name
+  address_prefixes     = ["10.0.1.0/24"]
+  
+  delegation {
+    name = "delegation-postgresql"
+    service_delegation {
+      name = "Microsoft.DBforPostgreSQL/flexibleServers"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+      ]
+    }
+  }
+}
+
+# Subnet for MySQL
+resource "azurerm_subnet" "mysql" {
+  name                 = "${var.app_name}-mysql-subnet-${var.environment}"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.database.name
+  address_prefixes     = ["10.0.2.0/24"]
+  
+  delegation {
+    name = "delegation-mysql"
+    service_delegation {
+      name = "Microsoft.DBforMySQL/flexibleServers"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+      ]
+    }
+  }
+}
+
+# PostgreSQL Flexible Server (Serverless - Burstable Tier)
+# Burstable tier provides cost-effective serverless-like scaling for development and small workloads
+resource "azurerm_postgresql_flexible_server" "main" {
+  count                  = var.postgresql_server_name != "" ? 1 : 0
+  name                   = var.postgresql_server_name
+  resource_group_name    = azurerm_resource_group.main.name
+  location               = azurerm_resource_group.main.location
+  version                = var.postgresql_version
+  delegated_subnet_id    = azurerm_subnet.postgresql.id
+  private_dns_zone_id    = azurerm_private_dns_zone.postgresql[0].id
+  administrator_login    = var.postgresql_admin_username
+  administrator_password = var.postgresql_admin_password
+  zone                   = "1"
+
+  storage_mb = var.postgresql_storage_mb
+
+  # Burstable SKU for serverless-like cost-effective scaling
+  # B_Standard_B1ms provides 1 vCore, 2GB RAM with burstable performance
+  sku_name = var.postgresql_sku_name
+
+  # Serverless configuration - high availability disabled for cost savings
+  high_availability {
+    mode = "Disabled"
+  }
+
+  backup {
+    geo_redundant_backup_enabled = false
+    retention_days               = var.postgresql_backup_retention_days
+  }
+
+  maintenance_window {
+    day_of_week  = 0
+    start_hour   = 2
+    start_minute = 0
+  }
+
+  tags = {
+    Environment = var.environment
+    Application = var.app_name
+  }
+
+  depends_on = [azurerm_private_dns_zone_virtual_network_link.postgresql]
+}
+
+# Private DNS Zone for PostgreSQL
+resource "azurerm_private_dns_zone" "postgresql" {
+  count               = var.postgresql_server_name != "" ? 1 : 0
+  name                = "${var.postgresql_server_name}.postgres.database.azure.com"
+  resource_group_name = azurerm_resource_group.main.name
+
+  tags = {
+    Environment = var.environment
+    Application = var.app_name
+  }
+}
+
+# Private DNS Zone Virtual Network Link for PostgreSQL
+resource "azurerm_private_dns_zone_virtual_network_link" "postgresql" {
+  count                 = var.postgresql_server_name != "" ? 1 : 0
+  name                  = "${var.app_name}-postgresql-vnet-link-${var.environment}"
+  resource_group_name   = azurerm_resource_group.main.name
+  private_dns_zone_name = azurerm_private_dns_zone.postgresql[0].name
+  virtual_network_id    = azurerm_virtual_network.database.id
+  registration_enabled  = false
+
+  tags = {
+    Environment = var.environment
+    Application = var.app_name
+  }
+}
+
+# PostgreSQL Database
+resource "azurerm_postgresql_flexible_server_database" "main" {
+  count     = var.postgresql_server_name != "" ? 1 : 0
+  name      = var.postgresql_database_name
+  server_id = azurerm_postgresql_flexible_server.main[0].id
+  collation = "en_US.utf8"
+  charset   = "utf8"
+
+  depends_on = [azurerm_postgresql_flexible_server.main]
+}
+
+# MySQL Flexible Server (Serverless - Burstable Tier)
+# Burstable tier provides cost-effective serverless-like scaling for development and small workloads
+resource "azurerm_mysql_flexible_server" "main" {
+  count                  = var.mysql_server_name != "" ? 1 : 0
+  name                   = var.mysql_server_name
+  resource_group_name    = azurerm_resource_group.main.name
+  location               = azurerm_resource_group.main.location
+  administrator_login    = var.mysql_admin_username
+  administrator_password = var.mysql_admin_password
+  version                = var.mysql_version
+  delegated_subnet_id    = azurerm_subnet.mysql.id
+  private_dns_zone_id    = azurerm_private_dns_zone.mysql[0].id
+  zone                   = "1"
+
+  storage {
+    auto_grow_enabled = var.mysql_storage_auto_grow_enabled
+    size_gb           = var.mysql_storage_size_gb
+    iops              = var.mysql_storage_iops
+  }
+
+  # Burstable SKU for serverless-like cost-effective scaling
+  # Standard_B1ms provides 1 vCore, 2GB RAM with burstable performance
+  sku_name = var.mysql_sku_name
+
+  backup {
+    enabled                      = true
+    geo_redundant_backup_enabled = false
+    retention_days               = var.mysql_backup_retention_days
+  }
+
+  # Serverless configuration - high availability disabled for cost savings
+  high_availability {
+    mode = "Disabled"
+  }
+
+  maintenance_window {
+    day_of_week  = 0
+    start_hour   = 2
+    start_minute = 0
+  }
+
+  tags = {
+    Environment = var.environment
+    Application = var.app_name
+  }
+
+  depends_on = [azurerm_private_dns_zone_virtual_network_link.mysql]
+}
+
+# Private DNS Zone for MySQL
+resource "azurerm_private_dns_zone" "mysql" {
+  count               = var.mysql_server_name != "" ? 1 : 0
+  name                = "${var.mysql_server_name}.mysql.database.azure.com"
+  resource_group_name = azurerm_resource_group.main.name
+
+  tags = {
+    Environment = var.environment
+    Application = var.app_name
+  }
+}
+
+# Private DNS Zone Virtual Network Link for MySQL
+resource "azurerm_private_dns_zone_virtual_network_link" "mysql" {
+  count                 = var.mysql_server_name != "" ? 1 : 0
+  name                  = "${var.app_name}-mysql-vnet-link-${var.environment}"
+  resource_group_name   = azurerm_resource_group.main.name
+  private_dns_zone_name = azurerm_private_dns_zone.mysql[0].name
+  virtual_network_id    = azurerm_virtual_network.database.id
+  registration_enabled  = false
+
+  tags = {
+    Environment = var.environment
+    Application = var.app_name
+  }
+}
+
+# MySQL Database
+resource "azurerm_mysql_flexible_database" "main" {
+  count     = var.mysql_server_name != "" ? 1 : 0
+  name      = var.mysql_database_name
+  server_id = azurerm_mysql_flexible_server.main[0].id
+  charset   = "utf8mb4"
+  collation = "utf8mb4_unicode_ci"
+
+  depends_on = [azurerm_mysql_flexible_server.main]
+}
+
+# Key Vault Secret for PostgreSQL Connection String
+resource "azurerm_key_vault_secret" "postgresql_connection_string" {
+  count        = var.postgresql_server_name != "" ? 1 : 0
+  name         = "PostgreSQLConnectionString"
+  value        = "postgresql://${var.postgresql_admin_username}:${var.postgresql_admin_password}@${azurerm_postgresql_flexible_server.main[0].fqdn}:5432/${var.postgresql_database_name}?sslmode=require"
+  key_vault_id = azurerm_key_vault.main.id
+
+  depends_on = [
+    azurerm_key_vault_access_policy.current_user,
+    azurerm_postgresql_flexible_server_database.main
+  ]
+
+  tags = {
+    Environment = var.environment
+    Application = var.app_name
+  }
+}
+
+# Key Vault Secret for MySQL Connection String
+resource "azurerm_key_vault_secret" "mysql_connection_string" {
+  count        = var.mysql_server_name != "" ? 1 : 0
+  name         = "MySQLConnectionString"
+  value        = "mysql://${var.mysql_admin_username}:${var.mysql_admin_password}@${azurerm_mysql_flexible_server.main[0].fqdn}:3306/${var.mysql_database_name}?ssl-mode=REQUIRED"
+  key_vault_id = azurerm_key_vault.main.id
+
+  depends_on = [
+    azurerm_key_vault_access_policy.current_user,
+    azurerm_mysql_flexible_database.main
+  ]
+
+  tags = {
+    Environment = var.environment
+    Application = var.app_name
+  }
+}
