@@ -35,6 +35,8 @@ services:
       - "5173:5173"
     env_file:
       - ./frontend/.env
+    environment:
+      - BACKEND_URL=${BACKEND_URL:-http://localhost:5500}
     networks:
       - ccps-network
     depends_on:

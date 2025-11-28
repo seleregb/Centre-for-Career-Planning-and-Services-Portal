@@ -44,7 +44,7 @@ function loadConfig() {
     }
 
     // Final fallback for local development
-    backendUrl = 'http://localhost:5000';
+    backendUrl = 'http://localhost:5500';
     console.warn('⚠️ Using default backend URL:', backendUrl);
     return backendUrl;
   })();
@@ -68,7 +68,7 @@ export function getBackendUrl() {
   }
   
   // Return fallback while loading
-  return import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+  return import.meta.env.VITE_BACKEND_URL || 'http://localhost:5500';
 }
 
 /**
@@ -76,7 +76,7 @@ export function getBackendUrl() {
  * Use this for immediate access (will use fallback if config not loaded yet)
  */
 export function getBackendUrlSync() {
-  return backendUrl || import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+  return backendUrl || import.meta.env.VITE_BACKEND_URL || 'http://localhost:5500';
 }
 
 /**

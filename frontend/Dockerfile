@@ -29,7 +29,7 @@ RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
     echo 'set -e' >> /docker-entrypoint.sh && \
     echo '' >> /docker-entrypoint.sh && \
     echo '# Generate config.json from BACKEND_URL environment variable' >> /docker-entrypoint.sh && \
-    echo 'BACKEND_URL="${BACKEND_URL:-http://localhost:5000}"' >> /docker-entrypoint.sh && \
+    echo 'BACKEND_URL="${BACKEND_URL:-http://localhost:5500}"' >> /docker-entrypoint.sh && \
     echo 'echo "{\"BACKEND_URL\": \"$BACKEND_URL\"}" > /usr/share/nginx/html/config.json' >> /docker-entrypoint.sh && \
     echo 'echo "Generated config.json with BACKEND_URL=$BACKEND_URL"' >> /docker-entrypoint.sh && \
     echo '' >> /docker-entrypoint.sh && \
