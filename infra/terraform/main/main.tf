@@ -218,6 +218,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
   version                      = var.postgresql_version
   delegated_subnet_id          = azurerm_subnet.postgresql.id
   private_dns_zone_id          = azurerm_private_dns_zone.postgresql[0].id
+  public_network_access_enabled = false
   administrator_login          = var.postgresql_admin_username
   administrator_password       = var.postgresql_admin_password
   zone                         = "1"
@@ -252,7 +253,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
 # Private DNS Zone for PostgreSQL
 resource "azurerm_private_dns_zone" "postgresql" {
   count               = var.postgresql_server_name != "" ? 1 : 0
-  name                = "${var.postgresql_server_name}.postgres.database.azure.com"
+  name                = "${replace(var.postgresql_server_name, "-", "")}.postgres.database.azure.com"
   resource_group_name = azurerm_resource_group.main.name
 
   tags = {
@@ -299,6 +300,7 @@ resource "azurerm_mysql_flexible_server" "main" {
   version                      = var.mysql_version
   delegated_subnet_id          = azurerm_subnet.mysql.id
   private_dns_zone_id          = azurerm_private_dns_zone.mysql[0].id
+  public_network_access_enabled = false
   zone                         = "1"
   backup_retention_days        = var.mysql_backup_retention_days
   geo_redundant_backup_enabled = false
@@ -335,7 +337,7 @@ resource "azurerm_mysql_flexible_server" "main" {
 # Private DNS Zone for MySQL
 resource "azurerm_private_dns_zone" "mysql" {
   count               = var.mysql_server_name != "" ? 1 : 0
-  name                = "${var.mysql_server_name}.mysql.database.azure.com"
+  name                = "${replace(var.mysql_server_name, "-", "")}.mysql.database.azure.com"
   resource_group_name = azurerm_resource_group.main.name
 
   tags = {
@@ -374,7 +376,7 @@ resource "azurerm_mysql_flexible_database" "main" {
 # Key Vault Secret for PostgreSQL Connection String
 resource "azurerm_key_vault_secret" "postgresql_connection_string" {
   count        = var.postgresql_server_name != "" ? 1 : 0
-  name         = "PostgreSQLConnectionString"
+  name         = "postgresql-connection-string"
   value        = "postgresql://${var.postgresql_admin_username}:${var.postgresql_admin_password}@${azurerm_postgresql_flexible_server.main[0].fqdn}:5432/${var.postgresql_database_name}?sslmode=require"
   key_vault_id = azurerm_key_vault.main.id
 
@@ -392,7 +394,7 @@ resource "azurerm_key_vault_secret" "postgresql_connection_string" {
 # Key Vault Secret for MySQL Connection String
 resource "azurerm_key_vault_secret" "mysql_connection_string" {
   count        = var.mysql_server_name != "" ? 1 : 0
-  name         = "MySQLConnectionString"
+  name         = "mysql-connection-string"
   value        = "mysql://${var.mysql_admin_username}:${var.mysql_admin_password}@${azurerm_mysql_flexible_server.main[0].fqdn}:3306/${var.mysql_database_name}?ssl-mode=REQUIRED"
   key_vault_id = azurerm_key_vault.main.id
 
