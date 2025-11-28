@@ -42,7 +42,7 @@ mysql_database_name         = "ccpsportal-dev"
 mysql_storage_size_gb       = 20  # Minimum 20 GB
 mysql_storage_auto_grow_enabled = true
 mysql_storage_iops          = 360
-mysql_sku_name              = "B_Standard_B1ms"  # Burstable tier for serverless scaling
+mysql_sku_name              = "B_Standard_B1s"  # Burstable tier for serverless scaling
 mysql_backup_retention_days = 7
 
 # Database Configuration
