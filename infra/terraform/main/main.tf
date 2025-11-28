@@ -178,6 +178,7 @@ resource "azurerm_subnet" "postgresql" {
   resource_group_name  = azurerm_resource_group.main.name
   virtual_network_name = azurerm_virtual_network.database.name
   address_prefixes     = ["10.0.1.0/24"]
+  service_endpoints    = ["Microsoft.Storage"]
 
   delegation {
     name = "delegation-postgresql"
@@ -196,6 +197,7 @@ resource "azurerm_subnet" "mysql" {
   resource_group_name  = azurerm_resource_group.main.name
   virtual_network_name = azurerm_virtual_network.database.name
   address_prefixes     = ["10.0.2.0/24"]
+  service_endpoints    = ["Microsoft.Storage"]
 
   delegation {
     name = "delegation-mysql"
@@ -211,19 +213,19 @@ resource "azurerm_subnet" "mysql" {
 # PostgreSQL Flexible Server (Serverless - Burstable Tier)
 # Burstable tier provides cost-effective serverless-like scaling for development and small workloads
 resource "azurerm_postgresql_flexible_server" "main" {
-  count                        = var.postgresql_server_name != "" ? 1 : 0
-  name                         = var.postgresql_server_name
-  resource_group_name          = azurerm_resource_group.main.name
-  location                     = azurerm_resource_group.main.location
-  version                      = var.postgresql_version
-  delegated_subnet_id          = azurerm_subnet.postgresql.id
-  private_dns_zone_id          = azurerm_private_dns_zone.postgresql[0].id
+  count                         = var.postgresql_server_name != "" ? 1 : 0
+  name                          = var.postgresql_server_name
+  resource_group_name           = azurerm_resource_group.main.name
+  location                      = azurerm_resource_group.main.location
+  version                       = var.postgresql_version
+  delegated_subnet_id           = azurerm_subnet.postgresql.id
+  private_dns_zone_id           = azurerm_private_dns_zone.postgresql[0].id
+  administrator_login           = var.postgresql_admin_username
+  administrator_password        = var.postgresql_admin_password
+  zone                          = "1"
+  geo_redundant_backup_enabled  = false
+  backup_retention_days         = var.postgresql_backup_retention_days
   public_network_access_enabled = false
-  administrator_login          = var.postgresql_admin_username
-  administrator_password       = var.postgresql_admin_password
-  zone                         = "1"
-  geo_redundant_backup_enabled = false
-  backup_retention_days        = var.postgresql_backup_retention_days
 
   storage_mb = var.postgresql_storage_mb
 
@@ -300,7 +302,6 @@ resource "azurerm_mysql_flexible_server" "main" {
   version                      = var.mysql_version
   delegated_subnet_id          = azurerm_subnet.mysql.id
   private_dns_zone_id          = azurerm_private_dns_zone.mysql[0].id
-  public_network_access_enabled = false
   zone                         = "1"
   backup_retention_days        = var.mysql_backup_retention_days
   geo_redundant_backup_enabled = false
