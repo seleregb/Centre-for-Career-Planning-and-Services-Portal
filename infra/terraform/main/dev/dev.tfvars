@@ -33,7 +33,7 @@ postgresql_sku_name         = "B_Standard_B1ms"  # Burstable tier for serverless
 postgresql_backup_retention_days = 7
 
 # MySQL Serverless Database Configuration
-Uncomment and configure to enable MySQL database
+# Uncomment and configure to enable MySQL database
 mysql_server_name           = "ccps-portal-mysql-dev"  # Must be globally unique
 mysql_admin_username        = "mysqladmin"
 mysql_admin_password        = ""  # Provide via TF_VAR_mysql_admin_password
