@@ -162,8 +162,8 @@ resource "azurerm_key_vault_secret" "jwt_secret" {
 # Virtual Network for Databases
 resource "azurerm_virtual_network" "database" {
   name                = "${var.app_name}-db-vnet-${var.environment}"
-  location            = var.location != null ? var.location : azurerm_resource_group.main.location
-  resource_group_name = var.resource_group_name
+  location            = var.db_location != null ? var.db_location : azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
   address_space       = ["10.0.0.0/16"]
 
   tags = {
@@ -216,7 +216,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
   count                         = var.postgresql_server_name != "" ? 1 : 0
   name                          = var.postgresql_server_name
   resource_group_name           = azurerm_resource_group.main.name
-  location                      = var.postgresql_location != null ? var.postgresql_location : azurerm_resource_group.main.location
+  location                      = var.db_location != null ? var.db_location : azurerm_resource_group.main.location
   version                       = var.postgresql_version
   delegated_subnet_id           = azurerm_subnet.postgresql.id
   private_dns_zone_id           = azurerm_private_dns_zone.postgresql[0].id
@@ -292,7 +292,7 @@ resource "azurerm_mysql_flexible_server" "main" {
   count                        = var.mysql_server_name != "" ? 1 : 0
   name                         = var.mysql_server_name
   resource_group_name          = azurerm_resource_group.main.name
-  location                     = var.mysql_location != null ? var.mysql_location : azurerm_resource_group.main.location
+  location                     = var.db_location != null ? var.db_location : azurerm_resource_group.main.location
   administrator_login          = var.mysql_admin_username
   administrator_password       = var.mysql_admin_password
   version                      = var.mysql_version

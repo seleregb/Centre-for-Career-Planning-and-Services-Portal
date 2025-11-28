@@ -141,12 +141,6 @@ variable "postgresql_backup_retention_days" {
   default     = 7
 }
 
-variable "postgresql_location" {
-  description = "Azure region for PostgreSQL Flexible Server. If not specified, uses the main location. Useful when PostgreSQL is not available in the primary region."
-  type        = string
-  default     = null
-}
-
 # MySQL Database Configuration
 variable "mysql_server_name" {
   description = "Name of the MySQL Flexible Server (must be globally unique)"
@@ -216,9 +210,9 @@ variable "mysql_backup_retention_days" {
   default     = 7
 }
 
-variable "mysql_location" {
-  description = "Azure region for MySQL Flexible Server. If not specified, uses the main location. Useful when MySQL is not available in the primary region."
+# Database Configuration
+variable "db_location" {
+  description = "Azure region for database Flexible Server. If not specified, uses the main location. Useful when database is not available in the primary region."
   type        = string
   default     = null
 }
-
