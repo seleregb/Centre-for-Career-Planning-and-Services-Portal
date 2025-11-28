@@ -178,7 +178,7 @@ resource "azurerm_subnet" "postgresql" {
   resource_group_name  = azurerm_resource_group.main.name
   virtual_network_name = azurerm_virtual_network.database.name
   address_prefixes     = ["10.0.1.0/24"]
-  
+
   delegation {
     name = "delegation-postgresql"
     service_delegation {
@@ -196,7 +196,7 @@ resource "azurerm_subnet" "mysql" {
   resource_group_name  = azurerm_resource_group.main.name
   virtual_network_name = azurerm_virtual_network.database.name
   address_prefixes     = ["10.0.2.0/24"]
-  
+
   delegation {
     name = "delegation-mysql"
     service_delegation {
@@ -211,16 +211,18 @@ resource "azurerm_subnet" "mysql" {
 # PostgreSQL Flexible Server (Serverless - Burstable Tier)
 # Burstable tier provides cost-effective serverless-like scaling for development and small workloads
 resource "azurerm_postgresql_flexible_server" "main" {
-  count                  = var.postgresql_server_name != "" ? 1 : 0
-  name                   = var.postgresql_server_name
-  resource_group_name    = azurerm_resource_group.main.name
-  location               = azurerm_resource_group.main.location
-  version                = var.postgresql_version
-  delegated_subnet_id    = azurerm_subnet.postgresql.id
-  private_dns_zone_id    = azurerm_private_dns_zone.postgresql[0].id
-  administrator_login    = var.postgresql_admin_username
-  administrator_password = var.postgresql_admin_password
-  zone                   = "1"
+  count                        = var.postgresql_server_name != "" ? 1 : 0
+  name                         = var.postgresql_server_name
+  resource_group_name          = azurerm_resource_group.main.name
+  location                     = azurerm_resource_group.main.location
+  version                      = var.postgresql_version
+  delegated_subnet_id          = azurerm_subnet.postgresql.id
+  private_dns_zone_id          = azurerm_private_dns_zone.postgresql[0].id
+  administrator_login          = var.postgresql_admin_username
+  administrator_password       = var.postgresql_admin_password
+  zone                         = "1"
+  geo_redundant_backup_enabled = false
+  backup_retention_days        = var.postgresql_backup_retention_days
 
   storage_mb = var.postgresql_storage_mb
 
@@ -230,12 +232,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
 
   # Serverless configuration - high availability disabled for cost savings
   high_availability {
-    mode = "Disabled"
-  }
-
-  backup {
-    geo_redundant_backup_enabled = false
-    retention_days               = var.postgresql_backup_retention_days
+    mode = "SameZone"
   }
 
   maintenance_window {
@@ -293,16 +290,18 @@ resource "azurerm_postgresql_flexible_server_database" "main" {
 # MySQL Flexible Server (Serverless - Burstable Tier)
 # Burstable tier provides cost-effective serverless-like scaling for development and small workloads
 resource "azurerm_mysql_flexible_server" "main" {
-  count                  = var.mysql_server_name != "" ? 1 : 0
-  name                   = var.mysql_server_name
-  resource_group_name    = azurerm_resource_group.main.name
-  location               = azurerm_resource_group.main.location
-  administrator_login    = var.mysql_admin_username
-  administrator_password = var.mysql_admin_password
-  version                = var.mysql_version
-  delegated_subnet_id    = azurerm_subnet.mysql.id
-  private_dns_zone_id    = azurerm_private_dns_zone.mysql[0].id
-  zone                   = "1"
+  count                        = var.mysql_server_name != "" ? 1 : 0
+  name                         = var.mysql_server_name
+  resource_group_name          = azurerm_resource_group.main.name
+  location                     = azurerm_resource_group.main.location
+  administrator_login          = var.mysql_admin_username
+  administrator_password       = var.mysql_admin_password
+  version                      = var.mysql_version
+  delegated_subnet_id          = azurerm_subnet.mysql.id
+  private_dns_zone_id          = azurerm_private_dns_zone.mysql[0].id
+  zone                         = "1"
+  backup_retention_days        = var.mysql_backup_retention_days
+  geo_redundant_backup_enabled = false
 
   storage {
     auto_grow_enabled = var.mysql_storage_auto_grow_enabled
@@ -314,15 +313,9 @@ resource "azurerm_mysql_flexible_server" "main" {
   # Standard_B1ms provides 1 vCore, 2GB RAM with burstable performance
   sku_name = var.mysql_sku_name
 
-  backup {
-    enabled                      = true
-    geo_redundant_backup_enabled = false
-    retention_days               = var.mysql_backup_retention_days
-  }
-
   # Serverless configuration - high availability disabled for cost savings
   high_availability {
-    mode = "Disabled"
+    mode = "SameZone"
   }
 
   maintenance_window {
@@ -368,11 +361,12 @@ resource "azurerm_private_dns_zone_virtual_network_link" "mysql" {
 
 # MySQL Database
 resource "azurerm_mysql_flexible_database" "main" {
-  count     = var.mysql_server_name != "" ? 1 : 0
-  name      = var.mysql_database_name
-  server_id = azurerm_mysql_flexible_server.main[0].id
-  charset   = "utf8mb4"
-  collation = "utf8mb4_unicode_ci"
+  resource_group_name = azurerm_resource_group.main.name
+  count               = var.mysql_server_name != "" ? 1 : 0
+  name                = var.mysql_database_name
+  server_name         = azurerm_mysql_flexible_server.main[0].name
+  charset             = "utf8mb4"
+  collation           = "utf8mb4_unicode_ci"
 
   depends_on = [azurerm_mysql_flexible_server.main]
 }
