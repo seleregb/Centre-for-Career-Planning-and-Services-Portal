@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { getBackendUrlSync } from '../../utils/config.js';
+import { getBackendUrl } from '../../utils/config.js';
 
-const BASE_URL = getBackendUrlSync().replace(/\/$/, '') + '/api';
+const BASE_URL = getBackendUrl().replace(/\/$/, '') + '/api';
 
 export const useResume = () => {
   const [loading, setLoading] = useState(false);

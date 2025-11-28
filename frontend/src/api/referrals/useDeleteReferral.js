@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { getBackendUrlSync } from '../../utils/config.js';
+import { getBackendUrl } from '../../utils/config.js';
 
-const BASE_URL = getBackendUrlSync().replace(/\/$/, '') + '/api/referrals';
+const BASE_URL = getBackendUrl().replace(/\/$/, '') + '/api/referrals';
 
 export const useDeleteReferral = () => {
   const [isDeleting, setIsDeleting] = useState(false);

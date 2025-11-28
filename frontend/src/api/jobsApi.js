@@ -1,8 +1,8 @@
 // frontend/src/api/jobsApi.js
-import { getBackendUrlSync } from '../utils/config.js';
+import { getBackendUrl } from '../utils/config.js';
 
 // Get Backend Root URL from runtime config
-const BACKEND_ROOT = getBackendUrlSync();
+const BACKEND_ROOT = getBackendUrl();
 
 // This logic ensures BASE_URL is the root API path, e.g., 'http://localhost:3000/api'
 const BASE_URL = BACKEND_ROOT.endsWith('/api')

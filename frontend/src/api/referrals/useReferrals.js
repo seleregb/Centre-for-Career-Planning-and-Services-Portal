@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { getBackendUrlSync } from '../../utils/config.js';
+import { getBackendUrl } from '../../utils/config.js';
 
-const BASE_URL = getBackendUrlSync().replace(/\/$/, '') + '/api';
+const BASE_URL = getBackendUrl().replace(/\/$/, '') + '/api';
 
 export const useReferrals = () => {
     const [referrals, setReferrals] = useState([]);

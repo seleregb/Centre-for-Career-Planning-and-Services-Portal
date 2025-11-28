@@ -1,8 +1,8 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { getBackendUrlSync } from '../../utils/config.js';
+import { getBackendUrl } from '../../utils/config.js';
 
-const BASE_URL = getBackendUrlSync().replace(/\/$/, '') + '/api/alumni';
+const BASE_URL = getBackendUrl().replace(/\/$/, '') + '/api/alumni';
 
 const useGetAlumniByType = () => {
   const [loading, setLoading] = useState(false);

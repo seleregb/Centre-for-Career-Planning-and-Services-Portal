@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { getBackendUrlSync, configPromise } from "../utils/config.js";
+import { getBackendUrl, configPromise } from "../utils/config.js";
 
 export const AppContext = createContext();
 
@@ -9,7 +9,7 @@ export const useAppContext = () => {
 
 export const AppContextProvider = ({ children }) => {
     // Initialize with sync value (will use fallback if config not loaded yet)
-    const [backendUrl, setBackendUrl] = useState(getBackendUrlSync());
+    const [backendUrl, setBackendUrl] = useState(getBackendUrl());
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const [showVerifyEmail, setShowVerifyEmail] = useState(false);
     const [showAddThread, setShowAddThread] = useState(false);

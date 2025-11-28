@@ -1,6 +1,6 @@
-import { getBackendUrlSync } from '../../utils/config.js';
+import { getBackendUrl } from '../../utils/config.js';
 
-const BASE_URL = getBackendUrlSync().replace(/\/$/, '') + '/api/profile';
+const BASE_URL = getBackendUrl().replace(/\/$/, '') + '/api/profile';
 
   export const createStudentProfile = async (userId, data) => {
     const res = await fetch(`${BASE_URL}/${userId}`, {

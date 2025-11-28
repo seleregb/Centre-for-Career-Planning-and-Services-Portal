@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useAuthContext } from '../../context/AuthContext';
-import { getBackendUrlSync } from '../../utils/config.js';
+import { getBackendUrl } from '../../utils/config.js';
 
-const BASE_URL = getBackendUrlSync().replace(/\/$/, '') + '/api';
+const BASE_URL = getBackendUrl().replace(/\/$/, '') + '/api';
 
 export const useRequestReferral = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);

@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-import { getBackendUrlSync } from '../utils/config.js';
+import { getBackendUrl } from '../utils/config.js';
 
-const BACKEND_ROOT = getBackendUrlSync();
+const BACKEND_ROOT = getBackendUrl();
 const BASE_URL = BACKEND_ROOT.endsWith('/api')
   ? BACKEND_ROOT
   : BACKEND_ROOT.replace(/\/$/, '') + '/api';
