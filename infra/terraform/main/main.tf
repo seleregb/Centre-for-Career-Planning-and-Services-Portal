@@ -162,8 +162,8 @@ resource "azurerm_key_vault_secret" "jwt_secret" {
 # Virtual Network for Databases
 resource "azurerm_virtual_network" "database" {
   name                = "${var.app_name}-db-vnet-${var.environment}"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location != null ? var.location : azurerm_resource_group.main.location
+  resource_group_name = var.resource_group_name
   address_space       = ["10.0.0.0/16"]
 
   tags = {
