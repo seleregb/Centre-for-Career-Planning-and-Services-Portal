@@ -97,14 +97,44 @@ locals {
   backend_fqdn = "${var.app_name}-backend-${var.environment}.${replace(azurerm_container_app_environment.main.default_domain, "*.", "")}"
 }
 
-data "azurerm_key_vault_secret" "mongodb_atlas_connection_string" {
-  name         = "MongoDBAtlasConnectionString"
+data "azurerm_key_vault_secret" "mongodb" {
+  name         = "mongodb-uri"
   key_vault_id = data.azurerm_key_vault.main.id
 }
 
-data "azurerm_key_vault_secret" "jwt_secret" {
-  name         = "JWTSecret"
+data "azurerm_key_vault_secret" "jwt" {
+  name         = "jwt-secret"
   key_vault_id = data.azurerm_key_vault.main.id
+}
+
+# Create a user-assigned managed identity for the backend container app
+resource "azurerm_user_assigned_identity" "backend" {
+  name                = "${var.app_name}-backend-identity-${var.environment}"
+  location            = data.azurerm_resource_group.main.location
+  resource_group_name = data.azurerm_resource_group.main.name
+}
+
+# Grant backend container app's SystemAssigned identity access to Key Vault using RBAC
+resource "azurerm_role_assignment" "backend_keyvault_secrets_user" {
+  scope                = data.azurerm_key_vault.main.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_user_assigned_identity.backend.principal_id
+
+  depends_on = [
+    azurerm_user_assigned_identity.backend
+  ]
+}
+
+# Grant backend container app access to Key Vault
+resource "azurerm_key_vault_access_policy" "backend" {
+  key_vault_id = data.azurerm_key_vault.main.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = azurerm_user_assigned_identity.backend.principal_id
+
+  secret_permissions = [
+    "Get",
+    "List"
+  ]
 }
 
 # Container App for Backend
@@ -115,7 +145,8 @@ resource "azurerm_container_app" "backend" {
   revision_mode                = var.container_app_revision_mode
 
   identity {
-    type = "SystemAssigned"
+    type = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.backend.id]
   }
 
   registry {
@@ -131,12 +162,14 @@ resource "azurerm_container_app" "backend" {
 
   secret {
     name                = "mongodb-uri"
-    key_vault_secret_id = data.azurerm_key_vault_secret.mongodb_atlas_connection_string.id
+    key_vault_secret_id = data.azurerm_key_vault_secret.mongodb.id
+    identity            = azurerm_user_assigned_identity.backend.id
   }
 
   secret {
     name                = "jwt-secret"
-    key_vault_secret_id = data.azurerm_key_vault_secret.jwt_secret.id
+    key_vault_secret_id = data.azurerm_key_vault_secret.jwt.id
+    identity            = azurerm_user_assigned_identity.backend.id
   }
 
   template {
@@ -283,18 +316,6 @@ resource "azurerm_container_app" "frontend" {
     Application = var.app_name
     Component   = "frontend"
   }
-}
-
-# Grant backend container app access to Key Vault
-resource "azurerm_key_vault_access_policy" "backend" {
-  key_vault_id = data.azurerm_key_vault.main.id
-  tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = azurerm_container_app.backend.identity[0].principal_id
-
-  secret_permissions = [
-    "Get",
-    "List"
-  ]
 }
 
 # Grant frontend container app access to Key Vault (if needed in future)
