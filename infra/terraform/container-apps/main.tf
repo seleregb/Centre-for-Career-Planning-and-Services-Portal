@@ -242,7 +242,7 @@ locals {
 }
 
 data "azurerm_key_vault_secret" "mongodb" {
-  name         = "mongodb-uri"
+  name         = "mongodb-connection-string"
   key_vault_id = data.azurerm_key_vault.main.id
 }
 
@@ -320,7 +320,7 @@ resource "azurerm_container_app" "main" {
   }
 
   secret {
-    name                = "mongodb-uri"
+    name                = "mongodb-connection-string"
     key_vault_secret_id = data.azurerm_key_vault_secret.mongodb.id
     identity            = azurerm_user_assigned_identity.app.id
   }

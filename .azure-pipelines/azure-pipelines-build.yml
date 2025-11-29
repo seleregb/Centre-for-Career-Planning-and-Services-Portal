@@ -34,7 +34,6 @@ stages:
               tags: |
                 latest
                 dev-$(Build.BuildId)
-                dev-$(Build.SourceBranchName)
           - task: Docker@2
             displayName: Build and push backend (dev)
             inputs:
@@ -44,7 +43,6 @@ stages:
               containerRegistry: $(dockerDeploymentDevSvc)
               tags: |
                 dev-$(Build.BuildId)
-                dev-$(Build.SourceBranchName)
                 latest
           # - task: Docker@2
           #   displayName: Build and push frontend (stage)
@@ -57,7 +55,6 @@ stages:
           #     tags: |
           #       latest
           #       stage-$(Build.BuildId)
-          #       stage-$(Build.SourceBranchName)
           # - task: Docker@2
           #   displayName: Build and push backend (stage)
           #   inputs:
@@ -68,7 +65,6 @@ stages:
           #     tags: |
           #       latest
           #       stage-$(Build.BuildId)
-          #       stage-$(Build.SourceBranchName)
           # - task: Docker@2
           #   displayName: Build and push frontend (prod)
           #   inputs:
@@ -80,7 +76,6 @@ stages:
           #     tags: |
           #       latest
           #       prod-$(Build.BuildId)
-          #       prod-$(Build.SourceBranchName)
           # - task: Docker@2
           #   displayName: Build and push backend (prod)
           #   inputs:
@@ -91,7 +86,6 @@ stages:
           #     tags: |
           #       latest
           #       prod-$(Build.BuildId)
-          #       prod-$(Build.SourceBranchName)
           - task: PublishBuildArtifacts@1
             inputs:
               PathtoPublish: '$(System.DefaultWorkingDirectory)'

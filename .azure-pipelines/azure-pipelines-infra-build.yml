@@ -133,3 +133,17 @@ stages:
               ArtifactName: 'infra'
               publishLocation: 'Container'
 
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Docker Artifacts - Frontend'
+            inputs:
+              PathtoPublish: '$(System.DefaultWorkingDirectory)/frontend'
+              ArtifactName: 'docker-artifacts-frontend'
+              publishLocation: 'Container'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Docker Artifacts - Backend'
+            inputs:
+              PathtoPublish: '$(System.DefaultWorkingDirectory)/backend'
+              ArtifactName: 'docker-artifacts-backend'
+              publishLocation: 'Container'
+
