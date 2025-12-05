@@ -11,10 +11,6 @@ trigger:
 
 variables:
 - group: 'infrastructure-common'
-- name: imageRepositoryFrontend
-  value: ccps-portal/frontend
-- name: imageRepositoryBackend
-  value: ccps-portal/backend
 
 stages:
   - stage: Build
