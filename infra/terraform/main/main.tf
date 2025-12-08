@@ -190,6 +190,7 @@ module "db" {
   postgresql_storage_mb            = var.postgresql_storage_mb
   postgresql_sku_name              = var.postgresql_sku_name
   postgresql_backup_retention_days = var.postgresql_backup_retention_days
+  postgresql_location              = var.postgresql_location
 
   # MySQL Configuration
   mysql_server_name               = var.mysql_server_name
@@ -203,6 +204,7 @@ module "db" {
   mysql_storage_iops              = var.mysql_storage_iops
   mysql_sku_name                  = var.mysql_sku_name
   mysql_backup_retention_days     = var.mysql_backup_retention_days
+  mysql_location                  = var.mysql_location
 
   depends_on = [azurerm_resource_group.main, azurerm_key_vault.main]
 }

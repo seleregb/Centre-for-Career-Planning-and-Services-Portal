@@ -1,6 +1,6 @@
 # Database Module for CCPS Portal
 # This module deploys MySQL and PostgreSQL Flexible Servers
-# MySQL is deployed in eastus, PostgreSQL is deployed in eastus2
+# MySQL is deployed in westus2, PostgreSQL is deployed in eastus2
 
 # Ensure Microsoft.DBforMySQL and Microsoft.DBforPostgreSQL providers are registered
 resource "null_resource" "register_microsoft_app" {
@@ -12,7 +12,7 @@ resource "null_resource" "register_microsoft_app" {
   }
 }
 
-# Virtual Network for MySQL Database (eastus)
+# Virtual Network for MySQL Database (westus2)
 resource "azurerm_virtual_network" "mysql" {
   count               = var.mysql_server_name != "" ? 1 : 0
   name                = "${var.app_name}-mysql-vnet-${var.environment}"
@@ -80,7 +80,7 @@ resource "azurerm_subnet" "postgresql" {
   }
 }
 
-# MySQL Flexible Server (in eastus)
+# MySQL Flexible Server (in westus2)
 resource "azurerm_mysql_flexible_server" "main" {
   count                        = var.mysql_server_name != "" ? 1 : 0
   name                         = var.mysql_server_name
