@@ -39,12 +39,12 @@ stages:
             #   workingDirectory: 'infra/terraform/main'
             #   tfvarsFile: 'infra/terraform/main/prod/prod.tfvars'
             #   backendConfig: 'infra/terraform/main/prod/prod.conf'
-            ACR_Dev:
-              module: acr
-              environment: dev
-              workingDirectory: 'infra/terraform/acr'
-              tfvarsFile: 'infra/terraform/acr/dev/dev.tfvars'
-              backendConfig: 'infra/terraform/acr/dev/dev.conf'
+            # ACR_Dev:
+            #   module: acr
+            #   environment: dev
+            #   workingDirectory: 'infra/terraform/acr'
+            #   tfvarsFile: 'infra/terraform/acr/dev/dev.tfvars'
+            #   backendConfig: 'infra/terraform/acr/dev/dev.conf'
             # ACR_Stage:
             #   module: acr
             #   environment: stage
@@ -57,12 +57,12 @@ stages:
             #   workingDirectory: 'infra/terraform/acr'
             #   tfvarsFile: 'infra/terraform/acr/prod/prod.tfvars'
             #   backendConfig: 'infra/terraform/acr/prod/prod.conf'
-            ContainerApps_Dev:
-              module: container-apps
-              environment: dev
-              workingDirectory: 'infra/terraform/container-apps'
-              tfvarsFile: 'infra/terraform/container-apps/dev/dev.tfvars'
-              backendConfig: 'infra/terraform/container-apps/dev/dev.conf'
+            # ContainerApps_Dev:
+            #   module: container-apps
+            #   environment: dev
+            #   workingDirectory: 'infra/terraform/container-apps'
+            #   tfvarsFile: 'infra/terraform/container-apps/dev/dev.tfvars'
+            #   backendConfig: 'infra/terraform/container-apps/dev/dev.conf'
             # ContainerApps_Stage:
             #   module: container-apps
             #   environment: stage
@@ -75,12 +75,12 @@ stages:
             #   workingDirectory: 'infra/terraform/container-apps'
             #   tfvarsFile: 'infra/terraform/container-apps/prod/prod.tfvars'
             #   backendConfig: 'infra/terraform/container-apps/prod/prod.conf'
-            DB_Dev:
-              module: db
-              environment: dev
-              workingDirectory: 'infra/terraform/db'
-              tfvarsFile: 'infra/terraform/db/dev/dev.tfvars'
-              backendConfig: 'infra/terraform/db/dev/dev.conf'
+            # DB_Dev:
+            #   module: db
+            #   environment: dev
+            #   workingDirectory: 'infra/terraform/db'
+            #   tfvarsFile: 'infra/terraform/db/dev/dev.tfvars'
+            #   backendConfig: 'infra/terraform/db/dev/dev.conf'
             # DB_Stage:
             #   module: db
             #   environment: stage
