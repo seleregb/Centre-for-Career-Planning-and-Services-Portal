@@ -105,11 +105,11 @@ resource "azurerm_mysql_flexible_server" "main" {
   # Note: High availability is not supported for burstable SKUs
   sku_name = var.mysql_sku_name
 
-  maintenance_window {
-    day_of_week  = 0
-    start_hour   = 2
-    start_minute = 0
-  }
+  # maintenance_window {
+  #   day_of_week  = 0
+  #   start_hour   = 2
+  #   start_minute = 0
+  # }
 
   tags = {
     Environment = var.environment
@@ -185,11 +185,11 @@ resource "azurerm_postgresql_flexible_server" "main" {
   # Note: High availability is not supported for burstable SKUs
   sku_name = var.postgresql_sku_name
 
-  maintenance_window {
-    day_of_week  = 0
-    start_hour   = 2
-    start_minute = 0
-  }
+  # maintenance_window {
+  #   day_of_week  = 0
+  #   start_hour   = 2
+  #   start_minute = 0
+  # }
 
   tags = {
     Environment = var.environment
