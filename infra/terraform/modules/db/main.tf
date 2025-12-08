@@ -152,12 +152,12 @@ resource "azurerm_private_dns_zone_virtual_network_link" "mysql" {
 
 # MySQL Database
 resource "azurerm_mysql_flexible_database" "main" {
-  count              = var.mysql_server_name != "" ? 1 : 0
-  name               = var.mysql_database_name
-  server_name        = azurerm_mysql_flexible_server.main[0].name
+  count               = var.mysql_server_name != "" ? 1 : 0
+  name                = var.mysql_database_name
+  server_name         = azurerm_mysql_flexible_server.main[0].name
   resource_group_name = var.resource_group_name
-  charset            = "utf8mb4"
-  collation          = "utf8mb4_unicode_ci"
+  charset             = "utf8mb4"
+  collation           = "utf8mb4_unicode_ci"
 
   depends_on = [azurerm_mysql_flexible_server.main]
 }

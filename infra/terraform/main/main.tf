@@ -162,82 +162,82 @@ resource "azurerm_key_vault_secret" "jwt_secret" {
 
 module "azure_container_registry" {
   source = "../modules/acr"
-  
+
   environment         = var.environment
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   app_name            = var.app_name
   acr_sku             = var.acr_sku
   acr_admin_enabled   = var.acr_admin_enabled
-  
+
   depends_on = [azurerm_resource_group.main]
 }
 
 module "db" {
   source = "../modules/db"
-  
+
   environment         = var.environment
   resource_group_name = azurerm_resource_group.main.name
   app_name            = var.app_name
   key_vault_id        = azurerm_key_vault.main.id
-  
+
   # PostgreSQL Configuration
-  postgresql_server_name         = var.postgresql_server_name
-  postgresql_admin_username      = var.postgresql_admin_username
-  postgresql_admin_password      = var.postgresql_admin_password
-  postgresql_version             = var.postgresql_version
-  postgresql_database_name       = var.postgresql_database_name
-  postgresql_storage_mb          = var.postgresql_storage_mb
-  postgresql_sku_name            = var.postgresql_sku_name
+  postgresql_server_name           = var.postgresql_server_name
+  postgresql_admin_username        = var.postgresql_admin_username
+  postgresql_admin_password        = var.postgresql_admin_password
+  postgresql_version               = var.postgresql_version
+  postgresql_database_name         = var.postgresql_database_name
+  postgresql_storage_mb            = var.postgresql_storage_mb
+  postgresql_sku_name              = var.postgresql_sku_name
   postgresql_backup_retention_days = var.postgresql_backup_retention_days
-  
+
   # MySQL Configuration
-  mysql_server_name         = var.mysql_server_name
-  mysql_admin_username      = var.mysql_admin_username
-  mysql_admin_password      = var.mysql_admin_password
-  mysql_version             = var.mysql_version
-  mysql_database_name       = var.mysql_database_name
-  mysql_storage_mb          = var.mysql_storage_mb
-  mysql_storage_size_gb     = var.mysql_storage_size_gb
+  mysql_server_name               = var.mysql_server_name
+  mysql_admin_username            = var.mysql_admin_username
+  mysql_admin_password            = var.mysql_admin_password
+  mysql_version                   = var.mysql_version
+  mysql_database_name             = var.mysql_database_name
+  mysql_storage_mb                = var.mysql_storage_mb
+  mysql_storage_size_gb           = var.mysql_storage_size_gb
   mysql_storage_auto_grow_enabled = var.mysql_storage_auto_grow_enabled
-  mysql_storage_iops        = var.mysql_storage_iops
-  mysql_sku_name           = var.mysql_sku_name
-  mysql_backup_retention_days = var.mysql_backup_retention_days
-  
+  mysql_storage_iops              = var.mysql_storage_iops
+  mysql_sku_name                  = var.mysql_sku_name
+  mysql_backup_retention_days     = var.mysql_backup_retention_days
+
   depends_on = [azurerm_resource_group.main, azurerm_key_vault.main]
 }
 
 module "container_apps" {
   count  = var.deploy_container_apps ? 1 : 0
   source = "../modules/container-apps"
-  
+
   environment         = var.environment
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
   app_name            = var.app_name
   tenant_id           = data.azurerm_client_config.current.tenant_id
   key_vault_id        = azurerm_key_vault.main.id
-  
+
   # ACR Configuration
   acr_login_server   = module.azure_container_registry.acr_login_server
   acr_admin_username = module.azure_container_registry.acr_admin_username
   acr_admin_password = module.azure_container_registry.acr_admin_password
-  
+
   # Container Apps Configuration
   container_app_revision_mode = var.container_app_revision_mode
   min_replicas                = var.min_replicas
-  max_replicas                 = var.max_replicas
-  backend_cpu                  = var.backend_cpu
-  backend_memory               = var.backend_memory
-  frontend_cpu               = var.frontend_cpu
+  max_replicas                = var.max_replicas
+  backend_cpu                 = var.backend_cpu
+  backend_memory              = var.backend_memory
+  frontend_cpu                = var.frontend_cpu
   frontend_memory             = var.frontend_memory
-  
+
   # Database VNet Configuration (optional)
-  mysql_vnet_name             = try(module.db.mysql_vnet_name, "")
-  postgresql_vnet_name        = try(module.db.postgresql_vnet_name, "")
-  mysql_private_dns_zone_name  = try(module.db.mysql_private_dns_zone_name, "")
+  mysql_vnet_name                  = try(module.db.mysql_vnet_name, "")
+  postgresql_vnet_name             = try(module.db.postgresql_vnet_name, "")
+  mysql_private_dns_zone_name      = try(module.db.mysql_private_dns_zone_name, "")
   postgresql_private_dns_zone_name = try(module.db.postgresql_private_dns_zone_name, "")
-  
+
   depends_on = [
     module.azure_container_registry,
     module.db,
