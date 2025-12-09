@@ -93,7 +93,6 @@ resource "azurerm_mysql_flexible_server" "main" {
   private_dns_zone_id           = azurerm_private_dns_zone.mysql[0].id
   backup_retention_days         = var.mysql_backup_retention_days
   geo_redundant_backup_enabled  = false
-  public_network_access_enabled = true
 
   storage {
     auto_grow_enabled = var.mysql_storage_auto_grow_enabled
@@ -226,20 +225,20 @@ resource "azurerm_postgresql_flexible_server" "main" {
 
 # Firewall Rule for PostgreSQL
 resource "azurerm_postgresql_flexible_server_firewall_rule" "main" {
-  count               = var.postgresql_server_name != "" ? 1 : 0
-  name                = "AllowAzureServices"
-  server_id           = azurerm_postgresql_flexible_server.main[0].id
-  start_ip_address    = "0.0.0.0"
-  end_ip_address      = "0.0.0.0"
+  count            = var.postgresql_server_name != "" ? 1 : 0
+  name             = "AllowAzureServices"
+  server_id        = azurerm_postgresql_flexible_server.main[0].id
+  start_ip_address = "0.0.0.0"
+  end_ip_address   = "0.0.0.0"
 }
 
 # Firewall rule to allow access from container apps
 resource "azurerm_postgresql_flexible_server_firewall_rule" "container_apps" {
-  count               = var.postgresql_server_name != "" ? 1 : 0
-  name                = "AllowContainerApps"
-  server_id           = azurerm_postgresql_flexible_server.main[0].id
-  start_ip_address    = "10.2.0.0"  # Container Apps subnet start
-  end_ip_address      = "10.2.1.255"  # Container Apps subnet end (10.2.0.0/23)
+  count            = var.postgresql_server_name != "" ? 1 : 0
+  name             = "AllowContainerApps"
+  server_id        = azurerm_postgresql_flexible_server.main[0].id
+  start_ip_address = "10.2.0.0"   # Container Apps subnet start
+  end_ip_address   = "10.2.1.255" # Container Apps subnet end (10.2.0.0/23)
 }
 
 # Private DNS Zone for PostgreSQL
