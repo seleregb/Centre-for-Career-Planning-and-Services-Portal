@@ -82,17 +82,18 @@ resource "azurerm_subnet" "postgresql" {
 
 # MySQL Flexible Server (in westus2)
 resource "azurerm_mysql_flexible_server" "main" {
-  count                        = var.mysql_server_name != "" ? 1 : 0
-  name                         = var.mysql_server_name
-  resource_group_name          = var.resource_group_name
-  location                     = var.mysql_location
-  administrator_login          = var.mysql_admin_username
-  administrator_password       = var.mysql_admin_password
-  version                      = var.mysql_version
-  delegated_subnet_id          = azurerm_subnet.mysql[0].id
-  private_dns_zone_id          = azurerm_private_dns_zone.mysql[0].id
-  backup_retention_days        = var.mysql_backup_retention_days
-  geo_redundant_backup_enabled = false
+  count                         = var.mysql_server_name != "" ? 1 : 0
+  name                          = var.mysql_server_name
+  resource_group_name           = var.resource_group_name
+  location                      = var.mysql_location
+  administrator_login           = var.mysql_admin_username
+  administrator_password        = var.mysql_admin_password
+  version                       = var.mysql_version
+  delegated_subnet_id           = azurerm_subnet.mysql[0].id
+  private_dns_zone_id           = azurerm_private_dns_zone.mysql[0].id
+  backup_retention_days         = var.mysql_backup_retention_days
+  geo_redundant_backup_enabled  = false
+  public_network_access_enabled = true
 
   storage {
     auto_grow_enabled = var.mysql_storage_auto_grow_enabled
@@ -121,6 +122,26 @@ resource "azurerm_mysql_flexible_server" "main" {
     azurerm_private_dns_zone_virtual_network_link.mysql,
     null_resource.register_microsoft_app
   ]
+}
+
+# Firewall Rule for MySQL
+resource "azurerm_mysql_flexible_server_firewall_rule" "main" {
+  count               = var.mysql_server_name != "" ? 1 : 0
+  name                = "AllowAzureServices"
+  resource_group_name = var.resource_group_name
+  server_name         = azurerm_mysql_flexible_server.main[0].name
+  start_ip_address    = "0.0.0.0"
+  end_ip_address      = "0.0.0.0"
+}
+
+# Firewall rule to allow access from container apps
+resource "azurerm_mysql_flexible_server_firewall_rule" "container_apps" {
+  count               = var.mysql_server_name != "" ? 1 : 0
+  name                = "AllowContainerApps"
+  resource_group_name = var.resource_group_name
+  server_name         = azurerm_mysql_flexible_server.main[0].name
+  start_ip_address    = "10.2.0.0"   # Container Apps subnet start
+  end_ip_address      = "10.2.1.255" # Container Apps subnet end (10.2.0.0/23)
 }
 
 # Private DNS Zone for MySQL
@@ -176,7 +197,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
   zone                          = "1"
   geo_redundant_backup_enabled  = false
   backup_retention_days         = var.postgresql_backup_retention_days
-  public_network_access_enabled = false
+  public_network_access_enabled = true
 
   storage_mb = var.postgresql_storage_mb
 
@@ -201,6 +222,24 @@ resource "azurerm_postgresql_flexible_server" "main" {
     azurerm_private_dns_zone_virtual_network_link.postgresql,
     null_resource.register_microsoft_app
   ]
+}
+
+# Firewall Rule for PostgreSQL
+resource "azurerm_postgresql_flexible_server_firewall_rule" "main" {
+  count               = var.postgresql_server_name != "" ? 1 : 0
+  name                = "AllowAzureServices"
+  server_id           = azurerm_postgresql_flexible_server.main[0].id
+  start_ip_address    = "0.0.0.0"
+  end_ip_address      = "0.0.0.0"
+}
+
+# Firewall rule to allow access from container apps
+resource "azurerm_postgresql_flexible_server_firewall_rule" "container_apps" {
+  count               = var.postgresql_server_name != "" ? 1 : 0
+  name                = "AllowContainerApps"
+  server_id           = azurerm_postgresql_flexible_server.main[0].id
+  start_ip_address    = "10.2.0.0"  # Container Apps subnet start
+  end_ip_address      = "10.2.1.255"  # Container Apps subnet end (10.2.0.0/23)
 }
 
 # Private DNS Zone for PostgreSQL
