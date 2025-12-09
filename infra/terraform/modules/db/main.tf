@@ -82,17 +82,15 @@ resource "azurerm_subnet" "postgresql" {
 
 # MySQL Flexible Server (in westus2)
 resource "azurerm_mysql_flexible_server" "main" {
-  count                         = var.mysql_server_name != "" ? 1 : 0
-  name                          = var.mysql_server_name
-  resource_group_name           = var.resource_group_name
-  location                      = var.mysql_location
-  administrator_login           = var.mysql_admin_username
-  administrator_password        = var.mysql_admin_password
-  version                       = var.mysql_version
-  delegated_subnet_id           = azurerm_subnet.mysql[0].id
-  private_dns_zone_id           = azurerm_private_dns_zone.mysql[0].id
-  backup_retention_days         = var.mysql_backup_retention_days
-  geo_redundant_backup_enabled  = false
+  count                        = var.mysql_server_name != "" ? 1 : 0
+  name                         = var.mysql_server_name
+  resource_group_name          = var.resource_group_name
+  location                     = var.mysql_location
+  administrator_login          = var.mysql_admin_username
+  administrator_password       = var.mysql_admin_password
+  version                      = var.mysql_version
+  backup_retention_days        = var.mysql_backup_retention_days
+  geo_redundant_backup_enabled = false
 
   storage {
     auto_grow_enabled = var.mysql_storage_auto_grow_enabled
@@ -117,8 +115,6 @@ resource "azurerm_mysql_flexible_server" "main" {
   }
 
   depends_on = [
-    azurerm_subnet.mysql,
-    azurerm_private_dns_zone_virtual_network_link.mysql,
     null_resource.register_microsoft_app
   ]
 }
@@ -155,21 +151,6 @@ resource "azurerm_private_dns_zone" "mysql" {
   }
 }
 
-# Private DNS Zone Virtual Network Link for MySQL
-resource "azurerm_private_dns_zone_virtual_network_link" "mysql" {
-  count                 = var.mysql_server_name != "" ? 1 : 0
-  name                  = "${var.app_name}-mysql-vnet-link-${var.environment}"
-  resource_group_name   = var.resource_group_name
-  private_dns_zone_name = azurerm_private_dns_zone.mysql[0].name
-  virtual_network_id    = azurerm_virtual_network.mysql[0].id
-  registration_enabled  = false
-
-  tags = {
-    Environment = var.environment
-    Application = var.app_name
-  }
-}
-
 # MySQL Database
 resource "azurerm_mysql_flexible_database" "main" {
   count               = var.mysql_server_name != "" ? 1 : 0
@@ -189,8 +170,6 @@ resource "azurerm_postgresql_flexible_server" "main" {
   resource_group_name           = var.resource_group_name
   location                      = var.postgresql_location
   version                       = var.postgresql_version
-  delegated_subnet_id           = azurerm_subnet.postgresql[0].id
-  private_dns_zone_id           = azurerm_private_dns_zone.postgresql[0].id
   administrator_login           = var.postgresql_admin_username
   administrator_password        = var.postgresql_admin_password
   zone                          = "1"
@@ -217,8 +196,6 @@ resource "azurerm_postgresql_flexible_server" "main" {
   }
 
   depends_on = [
-    azurerm_subnet.postgresql,
-    azurerm_private_dns_zone_virtual_network_link.postgresql,
     null_resource.register_microsoft_app
   ]
 }
@@ -246,21 +223,6 @@ resource "azurerm_private_dns_zone" "postgresql" {
   count               = var.postgresql_server_name != "" ? 1 : 0
   name                = "${replace(var.postgresql_server_name, "-", "")}.postgres.database.azure.com"
   resource_group_name = var.resource_group_name
-
-  tags = {
-    Environment = var.environment
-    Application = var.app_name
-  }
-}
-
-# Private DNS Zone Virtual Network Link for PostgreSQL
-resource "azurerm_private_dns_zone_virtual_network_link" "postgresql" {
-  count                 = var.postgresql_server_name != "" ? 1 : 0
-  name                  = "${var.app_name}-postgresql-vnet-link-${var.environment}"
-  resource_group_name   = var.resource_group_name
-  private_dns_zone_name = azurerm_private_dns_zone.postgresql[0].name
-  virtual_network_id    = azurerm_virtual_network.postgresql[0].id
-  registration_enabled  = false
 
   tags = {
     Environment = var.environment

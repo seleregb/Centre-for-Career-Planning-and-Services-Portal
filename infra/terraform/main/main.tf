@@ -134,6 +134,7 @@ resource "azurerm_key_vault_access_policy" "current_user" {
 
 # Key Vault Secret for MongoDB Atlas Connection String
 resource "azurerm_key_vault_secret" "mongodb_connection_string" {
+  count        = var.mongodb_atlas_connection_string != "" ? 1 : 0
   name         = "mongodb-connection-string"
   value        = var.mongodb_atlas_connection_string
   key_vault_id = azurerm_key_vault.main.id
@@ -148,6 +149,7 @@ resource "azurerm_key_vault_secret" "mongodb_connection_string" {
 
 # Key Vault Secret for JWT Secret
 resource "azurerm_key_vault_secret" "jwt_secret" {
+  count        = var.jwt_secret != "" ? 1 : 0
   name         = "jwt-secret"
   value        = var.jwt_secret
   key_vault_id = azurerm_key_vault.main.id
